@@ -9,7 +9,9 @@ Published on npm as [`@xianlee/godot-mcp`](https://www.npmjs.com/package/@xianle
 
 ## Demo
 
-A short GIF of an MCP client editing a scene in the Godot editor belongs here. It is not in the repository yet.
+Godot 4.7.2 after `scripts/e2e-godot.mjs` created `scenes/main.tscn`. The scene root is a Node2D named `main`. `Player` has `scripts/player.gd` attached, and `Sprite` is a Sprite2D.
+
+![Godot editor showing the scene created through godot-mcp](docs/editor-demo.png)
 
 ## Architecture
 
@@ -129,19 +131,20 @@ npm start
 
 `npm install` builds `server/dist` through the `prepare` script. `npm start` is the same process `npx @xianlee/godot-mcp` runs. Logs go to stderr. stdout is reserved for MCP JSON-RPC.
 
-| Script                 | Purpose                                      |
-| ---------------------- | -------------------------------------------- |
-| `npm test`             | Vitest unit tests                            |
-| `npm run typecheck`    | `tsc` on the server and the tests            |
-| `npm run lint`         | ESLint                                       |
-| `npm run format:check` | Prettier                                     |
-| `npm run smoke`        | Start the built server and call `tools/list` |
+| Script                 | Purpose                                                     |
+| ---------------------- | ----------------------------------------------------------- |
+| `npm test`             | Vitest unit tests                                           |
+| `npm run typecheck`    | `tsc` on the server and the tests                           |
+| `npm run lint`         | ESLint                                                      |
+| `npm run format:check` | Prettier                                                    |
+| `npm run smoke`        | Start the built server and call `tools/list`                |
+| `npm run test:e2e`     | Editor integration test. Exits 0 if Godot is not installed. |
 
-The tests cover the parameter normalizer, path checks and project detection, the Godot output parser, the tool registry, and the 4.4 version check. They do not launch Godot.
+The unit tests cover the parameter normalizer, path checks and project detection, the Godot output parser, the tool registry, and the 4.4 version check. They do not launch Godot. `npm run test:e2e` does: it creates a temporary project, enables the addon, starts the editor, and calls the tools. Set `GODOT_PATH` to the executable. Without `GODOT_PATH` or a `godot` binary on `PATH`, the script prints a skip line and exits 0. `GODOT_E2E_HEADLESS=1` starts the editor with `--headless`.
 
 ## CI and npm
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs install, typecheck, lint, format check, tests, build, and the tools-list smoke test on Node.js 20 and 22.
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs install, typecheck, lint, format check, tests, build, and the tools-list smoke test on Node.js 20 and 22. A separate job downloads Godot 4.7.2 and runs `npm run test:e2e` under Xvfb.
 
 [`.github/workflows/release.yml`](.github/workflows/release.yml) publishes to npm when a tag `v*` is pushed and the tag matches `package.json` `version`. The workflow reads `NPM_TOKEN`. That secret is not in the repository. Add an npm automation token as the Actions secret `NPM_TOKEN` before pushing a release tag. The package name stays `@xianlee/godot-mcp`.
 

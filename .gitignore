@@ -61,8 +61,9 @@ coverage/
 *test_index*.js
 TestScene.tscn
 
-# Documentation and Cache
-docs/
+# Documentation cache. The editor demo image is the exception.
+docs/*
+!docs/editor-demo.png
 docs_cache/
 
 # NPM Authentication

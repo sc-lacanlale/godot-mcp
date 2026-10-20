@@ -26,6 +26,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "smoke": "node scripts/smoke-list-tools.mjs",
+    "test:e2e": "node scripts/e2e-godot.mjs",
     "inspector": "npx @modelcontextprotocol/inspector server/dist/index.js"
   },
   "dependencies": {
