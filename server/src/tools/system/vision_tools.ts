@@ -189,7 +189,7 @@ var _frames_waited := 0
 var _max_frames := ${frames}
 var _scene_loaded := false
 
-func _init():
+func _initialize() -> void:
 \tvar scene = load("${normalizedScene}")
 \tif scene:
 \t\tvar instance = scene.instantiate()
@@ -200,33 +200,37 @@ func _init():
 \t\tprint("[SCREENSHOT] ERROR: Failed to load scene: ${normalizedScene}")
 \t\tquit(1)
 
-func _process(_delta):
+func _process(_delta: float) -> bool:
 \tif not _scene_loaded:
-\t\treturn
+\t\treturn false
 \t_frames_waited += 1
-\tif _frames_waited >= _max_frames:
-\t\tvar viewport = root.get_viewport()
-\t\tif not viewport:
-\t\t\tprint("[SCREENSHOT] ERROR: No viewport available")
-\t\t\tquit(1)
-\t\t\treturn
-\t\tvar texture = viewport.get_texture()
-\t\tif not texture:
-\t\t\tprint("[SCREENSHOT] ERROR: Viewport texture is null — the renderer may not support offscreen capture")
-\t\t\tquit(1)
-\t\t\treturn
-\t\tvar image = texture.get_image()
-\t\tif not image:
-\t\t\tprint("[SCREENSHOT] ERROR: Failed to get image from viewport texture")
-\t\t\tquit(1)
-\t\t\treturn
-\t\tvar err = image.save_png("${escapedOutputPath}")
-\t\tif err == OK:
-\t\t\tprint("[SCREENSHOT] Saved to: ${escapedOutputPath}")
-\t\t\tprint("[SCREENSHOT] Size: " + str(image.get_width()) + "x" + str(image.get_height()))
-\t\telse:
-\t\t\tprint("[SCREENSHOT] ERROR: Failed to save screenshot, error code: " + str(err))
-\t\tquit(0)
+\tif _frames_waited < _max_frames:
+\t\treturn false
+\tvar viewport = root.get_viewport()
+\tif not viewport:
+\t\tprint("[SCREENSHOT] ERROR: No viewport available")
+\t\tquit(1)
+\t\treturn true
+\tvar texture = viewport.get_texture()
+\tif not texture:
+\t\tprint("[SCREENSHOT] ERROR: Viewport texture is null — the renderer may not support offscreen capture")
+\t\tquit(1)
+\t\treturn true
+\tvar image = texture.get_image()
+\tif not image:
+\t\tprint("[SCREENSHOT] ERROR: Failed to get image from viewport texture")
+\t\tquit(1)
+\t\treturn true
+\tvar err = image.save_png("${escapedOutputPath}")
+\tif err == OK:
+\t\tprint("[SCREENSHOT] Saved to: ${escapedOutputPath}")
+\t\tprint("[SCREENSHOT] Size: " + str(image.get_width()) + "x" + str(image.get_height()))
+\telse:
+\t\tprint("[SCREENSHOT] ERROR: Failed to save screenshot, error code: " + str(err))
+\t\tquit(1)
+\t\treturn true
+\tquit(0)
+\treturn true
 `;
 
             const tmpScriptPath = join(resolvedPath, '_mcp_capture_screenshot.gd');
@@ -237,6 +241,8 @@ func _process(_delta):
               // Use gl_compatibility renderer (NOT --headless, which uses a dummy
               // renderer that cannot produce viewport textures).
               const args = [
+                '--audio-driver',
+                'Dummy',
                 '--rendering-method',
                 'gl_compatibility',
                 '--path',
@@ -244,6 +250,9 @@ func _process(_delta):
                 '--script',
                 'res://_mcp_capture_screenshot.gd',
               ];
+              if (process.platform === 'linux' && process.env.DISPLAY) {
+                args.unshift('--display-driver', 'x11');
+              }
               let stdout = '';
               let stderr = '';
 

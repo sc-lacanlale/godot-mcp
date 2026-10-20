@@ -9,9 +9,9 @@ import { z } from 'zod';
 import { existsSync, readFileSync, writeFileSync, copyFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { spawn } from 'child_process';
 import { MCPTool } from '../../utils/types.js';
 import { getGameBridge, resetGameBridge } from '../../core/game_bridge.js';
+import { getProcessManager } from '../../core/process-manager.js';
 import {
   detectGodotPath,
   detectProjectPath,
@@ -175,32 +175,29 @@ export const gameBridgeTools: MCPTool[] = [
               }
             }
 
-            // Build launch args
-            const args = ['--path', resolvedPath];
-            const scenePath = params.scenePath as string;
-            if (scenePath) {
-              args.push(scenePath);
+            const scenePath = params.scenePath as string | undefined;
+            logInfo(`Launching game for bridge: ${resolvedPath}`);
+
+            // Track the process so manage_project stop/get_output can see it.
+            // A detached spawn left the game running after stop reported nothing was running.
+            const pm = getProcessManager();
+            await pm.runProject(resolvedPath, godotPath, scenePath);
+
+            const bridge = getGameBridge();
+            let lastError = 'bridge did not accept a connection';
+            const deadline = Date.now() + 8000;
+            while (Date.now() < deadline) {
+              try {
+                await bridge.connect();
+                return 'Game launched and bridge connected';
+              } catch (error) {
+                lastError = (error as Error).message;
+                resetGameBridge();
+                await new Promise((resolve) => setTimeout(resolve, 500));
+              }
             }
 
-            logInfo(`Launching game: ${godotPath} ${args.join(' ')}`);
-
-            const child = spawn(godotPath, args, {
-              cwd: resolvedPath,
-              detached: true,
-              stdio: 'ignore',
-            });
-            child.unref();
-
-            // Wait for bridge to come up, then connect
-            await new Promise((resolve) => setTimeout(resolve, 3000));
-
-            try {
-              const bridge = getGameBridge();
-              await bridge.connect();
-              return `✅ Game launched and bridge connected (PID: ${child.pid})`;
-            } catch {
-              return `⚠️ Game launched (PID: ${child.pid}) but bridge not yet ready. Try "connect" in a few seconds.`;
-            }
+            throw new Error(`Game launched but bridge did not connect: ${lastError}`);
           }
 
           default:

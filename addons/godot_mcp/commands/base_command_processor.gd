@@ -167,6 +167,10 @@ func _parse_property_value(value):
 				return packed
 		return value
 	
+	# HTML colors from tool arguments, e.g. "#ff8800"
+	if typeof(value) == TYPE_STRING and value.begins_with("#") and Color.html_is_valid(value):
+		return Color.html(value)
+
 	# Handle string-encoded Godot types (e.g. "Vector2(100, 200)")
 	if typeof(value) == TYPE_STRING and (
 		value.begins_with("Vector") or 

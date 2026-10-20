@@ -175,24 +175,32 @@ export const physicsTools: MCPTool[] = [
           case 'configure': {
             if (!params.node_path) throw new Error('node_path is required for configure');
 
+            // Godot 4 stores friction and bounce on PhysicsMaterial, not on the body.
+            const material: Record<string, unknown> = {};
+            if (params.friction !== undefined) material.friction = params.friction;
+            if (params.bounce !== undefined) material.bounce = params.bounce;
+
             const props: Record<string, unknown> = {};
             if (params.mass !== undefined) props['mass'] = params.mass;
-            if (params.friction !== undefined) props['friction'] = params.friction;
-            if (params.bounce !== undefined) props['bounce'] = params.bounce;
             if (params.gravity_scale !== undefined) props['gravity_scale'] = params.gravity_scale;
             if (params.linear_damp !== undefined) props['linear_damp'] = params.linear_damp;
             if (params.angular_damp !== undefined) props['angular_damp'] = params.angular_damp;
 
-            if (Object.keys(props).length === 0) {
-              // Read mode - get current physics properties
+            if (Object.keys(props).length === 0 && Object.keys(material).length === 0) {
               const result = await godot.sendCommand<CommandResult>('get_node_properties', {
                 node_path: params.node_path,
               });
               return JSON.stringify(result, null, 2);
             }
 
-            // Set properties
             const results: string[] = [];
+            if (Object.keys(material).length > 0) {
+              const applied = await godot.sendCommand<CommandResult>('set_physics_material', {
+                node_path: params.node_path,
+                ...material,
+              });
+              results.push(`friction=${applied.friction}`, `bounce=${applied.bounce}`);
+            }
             for (const [prop, val] of Object.entries(props)) {
               await godot.sendCommand<CommandResult>('update_node_property', {
                 node_path: params.node_path,

@@ -63,21 +63,24 @@ func run():
 	_parent = get_parent()
 	var scene = get_tree().edited_scene_root
 	
-	# Execute the provided code
+	# User code may return a String or other Variant. Comparing that to OK (int)
+	# is a runtime error in Godot 4 and skips execution_completed, so the MCP
+	# client waits until the command times out.
 	var err = _execute_code()
-	
-	# If there was an error, store it
-	if err != OK:
+	if typeof(err) != TYPE_INT or err != OK:
 		_error_message = "Failed to execute script with error: " + str(err)
 	
-	# Signal that execution is complete
 	execution_completed.emit()
 
 func _execute_code():
+	result = _run_user_code()
+	return OK
+
+func _run_user_code():
 	# USER CODE START
 {user_code}
 	# USER CODE END
-	return OK
+	return null
 """
 	
 	# Process the user code to ensure consistent indentation
