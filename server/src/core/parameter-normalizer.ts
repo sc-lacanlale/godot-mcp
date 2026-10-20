@@ -6,10 +6,7 @@
  * uses camelCase internally.  This module handles both directions.
  */
 
-import {
-    PARAMETER_MAPPINGS,
-    REVERSE_PARAMETER_MAPPINGS,
-} from '../config/config.js';
+import { PARAMETER_MAPPINGS, REVERSE_PARAMETER_MAPPINGS } from '../config/config.js';
 
 export type OperationParams = Record<string, unknown>;
 
@@ -23,28 +20,28 @@ export type OperationParams = Record<string, unknown>;
  * all other keys are left as-is.
  */
 export function normalizeParameters(params: OperationParams): OperationParams {
-    if (!params || typeof params !== 'object') return params;
+  if (!params || typeof params !== 'object') return params;
 
-    const result: OperationParams = {};
+  const result: OperationParams = {};
 
-    for (const key of Object.keys(params)) {
-        let normalizedKey = key;
+  for (const key of Object.keys(params)) {
+    let normalizedKey = key;
 
-        // Map known snake_case → camelCase
-        if (key.includes('_') && PARAMETER_MAPPINGS[key]) {
-            normalizedKey = PARAMETER_MAPPINGS[key];
-        }
-
-        // Recurse into nested objects (but not arrays)
-        const value = params[key];
-        if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-            result[normalizedKey] = normalizeParameters(value as OperationParams);
-        } else {
-            result[normalizedKey] = value;
-        }
+    // Map known snake_case → camelCase
+    if (key.includes('_') && PARAMETER_MAPPINGS[key]) {
+      normalizedKey = PARAMETER_MAPPINGS[key];
     }
 
-    return result;
+    // Recurse into nested objects (but not arrays)
+    const value = params[key];
+    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+      result[normalizedKey] = normalizeParameters(value as OperationParams);
+    } else {
+      result[normalizedKey] = value;
+    }
+  }
+
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -57,22 +54,22 @@ export function normalizeParameters(params: OperationParams): OperationParams {
  * otherwise a generic regex conversion is applied.
  */
 export function convertCamelToSnakeCase(params: OperationParams): OperationParams {
-    const result: OperationParams = {};
+  const result: OperationParams = {};
 
-    for (const key of Object.keys(params)) {
-        const snakeKey =
-            REVERSE_PARAMETER_MAPPINGS[key] ??
-            key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+  for (const key of Object.keys(params)) {
+    const snakeKey =
+      REVERSE_PARAMETER_MAPPINGS[key] ??
+      key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 
-        const value = params[key];
-        if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-            result[snakeKey] = convertCamelToSnakeCase(value as OperationParams);
-        } else {
-            result[snakeKey] = value;
-        }
+    const value = params[key];
+    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+      result[snakeKey] = convertCamelToSnakeCase(value as OperationParams);
+    } else {
+      result[snakeKey] = value;
     }
+  }
 
-    return result;
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -84,25 +81,25 @@ export function convertCamelToSnakeCase(params: OperationParams): OperationParam
  * (e.g. resolve Windows back-slashes to forward-slashes for Godot).
  */
 export function normalizeHandlerPaths(args: OperationParams): OperationParams {
-    const pathKeys = [
-        'projectPath',
-        'scenePath',
-        'texturePath',
-        'outputPath',
-        'filePath',
-        'nodePath',
-        'newPath',
-        'directory',
-    ];
+  const pathKeys = [
+    'projectPath',
+    'scenePath',
+    'texturePath',
+    'outputPath',
+    'filePath',
+    'nodePath',
+    'newPath',
+    'directory',
+  ];
 
-    const result = { ...args };
+  const result = { ...args };
 
-    for (const key of pathKeys) {
-        if (typeof result[key] === 'string') {
-            // Godot always uses forward slashes internally
-            result[key] = (result[key] as string).replace(/\\/g, '/');
-        }
+  for (const key of pathKeys) {
+    if (typeof result[key] === 'string') {
+      // Godot always uses forward slashes internally
+      result[key] = (result[key] as string).replace(/\\/g, '/');
     }
+  }
 
-    return result;
+  return result;
 }

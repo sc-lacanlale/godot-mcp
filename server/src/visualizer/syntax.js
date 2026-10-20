@@ -4,16 +4,62 @@
  */
 
 const GD_KEYWORDS = new Set([
-  'var', 'func', 'signal', 'class_name', 'extends', 'class', 'enum', 'const',
-  'if', 'elif', 'else', 'for', 'while', 'match', 'break', 'continue', 'pass', 'return',
-  'and', 'or', 'not', 'in', 'is', 'as', 'self', 'super', 'true', 'false', 'null',
-  'void', 'await', 'yield', 'static', 'preload', 'load'
+  'var',
+  'func',
+  'signal',
+  'class_name',
+  'extends',
+  'class',
+  'enum',
+  'const',
+  'if',
+  'elif',
+  'else',
+  'for',
+  'while',
+  'match',
+  'break',
+  'continue',
+  'pass',
+  'return',
+  'and',
+  'or',
+  'not',
+  'in',
+  'is',
+  'as',
+  'self',
+  'super',
+  'true',
+  'false',
+  'null',
+  'void',
+  'await',
+  'yield',
+  'static',
+  'preload',
+  'load',
 ]);
 
 const GD_TYPES = new Set([
-  'int', 'float', 'bool', 'String', 'Vector2', 'Vector3', 'Vector4',
-  'Color', 'Array', 'Dictionary', 'Object', 'Node', 'Node2D', 'Node3D',
-  'Control', 'Resource', 'Variant', 'void'
+  'int',
+  'float',
+  'bool',
+  'String',
+  'Vector2',
+  'Vector3',
+  'Vector4',
+  'Color',
+  'Array',
+  'Dictionary',
+  'Object',
+  'Node',
+  'Node2D',
+  'Node3D',
+  'Control',
+  'Resource',
+  'Variant',
+  'void',
 ]);
 
 export function highlightGDScript(code) {
@@ -98,19 +144,31 @@ export function highlightGDScript(code) {
   }
 
   // Convert tokens to HTML with Godot-like colors
-  return tokens.map(t => {
-    const escaped = t.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    switch (t.type) {
-      case 'keyword': return `<span style="color:#FF7085">${escaped}</span>`; // Pink/red
-      case 'type': return `<span style="color:#8EFFDA">${escaped}</span>`; // Teal/mint
-      case 'function': return `<span style="color:#66E6FF">${escaped}</span>`; // Cyan (function calls)
-      case 'string': return `<span style="color:#FFE566">${escaped}</span>`; // Yellow
-      case 'number': return `<span style="color:#A3FFB4">${escaped}</span>`; // Green
-      case 'comment': return `<span style="color:#9A9EA6">${escaped}</span>`; // Gray
-      case 'annotation': return `<span style="color:#FFB373">${escaped}</span>`; // Orange
-      case 'arrow': return `<span style="color:#ABC8FF">${escaped}</span>`; // Light blue
-      case 'identifier': return `<span style="color:#CDCFD2">${escaped}</span>`; // White/light gray (variables)
-      default: return escaped;
-    }
-  }).join('');
+  return tokens
+    .map((t) => {
+      const escaped = t.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      switch (t.type) {
+        case 'keyword':
+          return `<span style="color:#FF7085">${escaped}</span>`; // Pink/red
+        case 'type':
+          return `<span style="color:#8EFFDA">${escaped}</span>`; // Teal/mint
+        case 'function':
+          return `<span style="color:#66E6FF">${escaped}</span>`; // Cyan (function calls)
+        case 'string':
+          return `<span style="color:#FFE566">${escaped}</span>`; // Yellow
+        case 'number':
+          return `<span style="color:#A3FFB4">${escaped}</span>`; // Green
+        case 'comment':
+          return `<span style="color:#9A9EA6">${escaped}</span>`; // Gray
+        case 'annotation':
+          return `<span style="color:#FFB373">${escaped}</span>`; // Orange
+        case 'arrow':
+          return `<span style="color:#ABC8FF">${escaped}</span>`; // Light blue
+        case 'identifier':
+          return `<span style="color:#CDCFD2">${escaped}</span>`; // White/light gray (variables)
+        default:
+          return escaped;
+      }
+    })
+    .join('');
 }

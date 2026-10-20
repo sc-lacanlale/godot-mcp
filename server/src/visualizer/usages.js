@@ -3,8 +3,13 @@
  */
 
 import {
-  nodes, selectedNode, pendingDelete, setPendingDelete,
-  currentUsages, setCurrentUsages, esc
+  nodes,
+  selectedNode,
+  pendingDelete,
+  setPendingDelete,
+  currentUsages,
+  setCurrentUsages,
+  esc,
 } from './state.js';
 import { sendCommand } from './websocket.js';
 import { highlightGDScript } from './syntax.js';
@@ -21,7 +26,7 @@ window.showDeleteUsages = async function (index, isExport, type) {
     const func = selectedNode.functions[index];
     itemName = func?.name || '';
   } else {
-    const vars = selectedNode.variables.filter(v => v.exported === isExport);
+    const vars = selectedNode.variables.filter((v) => v.exported === isExport);
     itemName = vars[index]?.name || '';
   }
 
@@ -58,7 +63,8 @@ function renderUsagePanel() {
   if (currentUsages.length === 0) {
     // All usages fixed! Can delete now
     countEl.innerHTML = `<span style="color:#a6e3a1">✓ All usages fixed! Safe to delete.</span>`;
-    listEl.innerHTML = '<div style="padding: 30px; text-align: center; color: var(--text-muted);">No more usages found</div>';
+    listEl.innerHTML =
+      '<div style="padding: 30px; text-align: center; color: var(--text-muted);">No more usages found</div>';
     deleteBtn.textContent = 'Delete Now';
     deleteBtn.style.background = 'rgba(166, 227, 161, 0.2)';
     deleteBtn.style.color = '#a6e3a1';
@@ -66,10 +72,11 @@ function renderUsagePanel() {
   } else {
     countEl.innerHTML = `Found <span class="count-num">${currentUsages.length}</span> usage${currentUsages.length > 1 ? 's' : ''} — click to navigate`;
 
-    listEl.innerHTML = currentUsages.map((u, i) => {
-      const highlightedCode = highlightUsageInCode(u.code, itemName);
-      const fileName = u.file.split('/').pop().replace('.gd', '');
-      return `
+    listEl.innerHTML = currentUsages
+      .map((u, i) => {
+        const highlightedCode = highlightUsageInCode(u.code, itemName);
+        const fileName = u.file.split('/').pop().replace('.gd', '');
+        return `
         <div class="ufp-item"
              data-usage-index="${i}"
              data-file="${u.file}"
@@ -84,7 +91,8 @@ function renderUsagePanel() {
           <div class="ufp-file">${fileName}.gd</div>
         </div>
       `;
-    }).join('');
+      })
+      .join('');
     deleteBtn.textContent = 'Delete Anyway';
     deleteBtn.style.background = '';
     deleteBtn.style.color = '';
@@ -97,7 +105,7 @@ function renderUsagePanel() {
   if (!panel.dataset.positioned) {
     const detailPanel = document.getElementById('detail-panel');
     const detailWidth = detailPanel.offsetWidth;
-    panel.style.right = (detailWidth + 20) + 'px';
+    panel.style.right = detailWidth + 20 + 'px';
     panel.style.top = '80px';
     panel.style.left = 'auto';
   }
@@ -182,7 +190,7 @@ function initUsagePanelResize() {
       x: e.clientX,
       y: e.clientY,
       w: panel.offsetWidth,
-      h: panel.offsetHeight
+      h: panel.offsetHeight,
     };
     document.addEventListener('mousemove', onUfpResize);
     document.addEventListener('mouseup', onUfpResizeEnd);
@@ -229,7 +237,7 @@ window.closeUsagePanel = function () {
 
 window.navigateToUsage = function (el) {
   // Mark this item as active
-  document.querySelectorAll('#ufp-list .ufp-item').forEach(item => {
+  document.querySelectorAll('#ufp-list .ufp-item').forEach((item) => {
     item.classList.remove('active');
   });
   el.classList.add('active');
@@ -239,7 +247,7 @@ window.navigateToUsage = function (el) {
   const funcName = el.dataset.func;
 
   // Find the node for this file
-  const targetNode = nodes.find(n => n.path === file);
+  const targetNode = nodes.find((n) => n.path === file);
   if (!targetNode) {
     console.log('Node not found for file:', file);
     return;
@@ -268,23 +276,23 @@ async function performDelete(index, isExport, type, itemName) {
       await sendCommand('modify_signal', {
         path: selectedNode.path,
         action: 'delete',
-        old_name: itemName
+        old_name: itemName,
       });
       selectedNode.signals.splice(index, 1);
     } else if (type === 'function') {
       await sendCommand('modify_function_delete', {
         path: selectedNode.path,
-        name: itemName
+        name: itemName,
       });
       selectedNode.functions.splice(index, 1);
     } else {
       await sendCommand('modify_variable', {
         path: selectedNode.path,
         action: 'delete',
-        old_name: itemName
+        old_name: itemName,
       });
-      const vars = selectedNode.variables.filter(v => v.exported === isExport);
-      const actualIndex = selectedNode.variables.findIndex(v => v.name === vars[index].name);
+      const vars = selectedNode.variables.filter((v) => v.exported === isExport);
+      const actualIndex = selectedNode.variables.findIndex((v) => v.name === vars[index].name);
       if (actualIndex !== -1) selectedNode.variables.splice(actualIndex, 1);
     }
     console.log(`Deleted ${type} "${itemName}" from ${selectedNode.path}`);
@@ -308,14 +316,24 @@ function findUsagesSmart(name, type) {
   const usages = [];
 
   // GDScript built-in methods/keywords to avoid false positives
-  const builtinMethods = ['new', 'free', 'queue_free', 'get', 'set', 'call', 'emit', 'connect', 'disconnect'];
+  const builtinMethods = [
+    'new',
+    'free',
+    'queue_free',
+    'get',
+    'set',
+    'call',
+    'emit',
+    'connect',
+    'disconnect',
+  ];
   const isBuiltinMethod = builtinMethods.includes(name);
 
   for (const node of nodes) {
     // Check if this is the node where the item is declared
     const isDeclaringNode = node.path === selectedNode?.path;
 
-    for (const func of (node.functions || [])) {
+    for (const func of node.functions || []) {
       if (!func.body) continue;
 
       const lines = func.body.split('\n');
@@ -333,7 +351,7 @@ function findUsagesSmart(name, type) {
             file: node.path,
             line: lineNum,
             code: line.trim(),
-            funcName: func.name
+            funcName: func.name,
           });
         }
       });
@@ -373,7 +391,10 @@ function isActualUsage(line, name, type, isBuiltinMethod) {
     const constructorPattern = new RegExp(`\\.${name}\\s*\\(`);
     if (constructorPattern.test(line)) {
       // Check if the name appears OUTSIDE of a constructor pattern too
-      const withoutConstructors = line.replace(new RegExp(`\\w+\\.${name}\\s*\\([^)]*\\)`, 'g'), '');
+      const withoutConstructors = line.replace(
+        new RegExp(`\\w+\\.${name}\\s*\\([^)]*\\)`, 'g'),
+        '',
+      );
       if (!new RegExp(namePattern).test(withoutConstructors)) {
         return false; // Only appears in constructor calls
       }
@@ -383,8 +404,10 @@ function isActualUsage(line, name, type, isBuiltinMethod) {
   // For signals, check for signal-specific patterns
   if (type === 'signal') {
     // Match: signal_name.emit(), signal_name.connect(), etc.
-    return new RegExp(`\\b${name}\\s*\\.\\s*(emit|connect|disconnect)\\b`).test(line) ||
-      new RegExp(`\\.${name}\\s*\\.\\s*(connect|emit)`).test(line);
+    return (
+      new RegExp(`\\b${name}\\s*\\.\\s*(emit|connect|disconnect)\\b`).test(line) ||
+      new RegExp(`\\.${name}\\s*\\.\\s*(connect|emit)`).test(line)
+    );
   }
 
   // For functions, match function calls

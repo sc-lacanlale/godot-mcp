@@ -13,15 +13,15 @@ import { logError, logDebug } from './logger.js';
 // ---------------------------------------------------------------------------
 
 export interface ToolResponseContent {
-    type: 'text' | 'image';
-    text?: string;
-    data?: string;
-    mimeType?: string;
+  type: 'text' | 'image';
+  text?: string;
+  data?: string;
+  mimeType?: string;
 }
 
 export interface ToolResponse {
-    content: ToolResponseContent[];
-    isError?: true;
+  content: ToolResponseContent[];
+  isError?: true;
 }
 
 // ---------------------------------------------------------------------------
@@ -38,35 +38,35 @@ export interface ToolResponse {
  * ]);
  */
 export function createErrorResponse(
-    message: string,
-    possibleSolutions: string[] = [],
+  message: string,
+  possibleSolutions: string[] = [],
 ): ToolResponse {
-    logError(`Error response: ${message}`);
-    if (possibleSolutions.length > 0) {
-        logDebug(`Possible solutions: ${possibleSolutions.join(', ')}`);
-    }
+  logError(`Error response: ${message}`);
+  if (possibleSolutions.length > 0) {
+    logDebug(`Possible solutions: ${possibleSolutions.join(', ')}`);
+  }
 
-    const response: ToolResponse = {
-        content: [{ type: 'text', text: message }],
-        isError: true,
-    };
+  const response: ToolResponse = {
+    content: [{ type: 'text', text: message }],
+    isError: true,
+  };
 
-    if (possibleSolutions.length > 0) {
-        response.content.push({
-            type: 'text',
-            text: 'Possible solutions:\n- ' + possibleSolutions.join('\n- '),
-        });
-    }
+  if (possibleSolutions.length > 0) {
+    response.content.push({
+      type: 'text',
+      text: 'Possible solutions:\n- ' + possibleSolutions.join('\n- '),
+    });
+  }
 
-    return response;
+  return response;
 }
 
 /** Create a plain-text success response. */
 export function createSuccessResponse(text: string): ToolResponse {
-    return { content: [{ type: 'text', text }] };
+  return { content: [{ type: 'text', text }] };
 }
 
 /** Create a JSON-formatted success response. */
 export function createJsonResponse(data: unknown): ToolResponse {
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+  return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
 }

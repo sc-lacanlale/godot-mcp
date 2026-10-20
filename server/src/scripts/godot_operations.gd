@@ -1,4 +1,6 @@
 #!/usr/bin/env -S godot --headless --script
+# Derived from Coding-Solo/godot-mcp (MIT License).
+# Copyright (c) 2025 Solomon Elias. https://github.com/Coding-Solo/godot-mcp
 extends SceneTree
 
 # Debug mode flag
@@ -49,10 +51,13 @@ func _init():
         log_error("Failed to parse JSON parameters: " + params_json)
         log_error("JSON Error: " + json.get_error_message() + " at line " + str(json.get_error_line()))
         quit(1)
+        return
     
-    if not params:
+    # An empty Dictionary is valid JSON and is falsy in GDScript, so compare with null.
+    if params == null:
         log_error("Failed to parse JSON parameters: " + params_json)
         quit(1)
+        return
     
     log_info("Executing operation: " + operation)
     

@@ -1,4 +1,6 @@
 @tool
+# Derived from ee0pdt/godot-mcp (MIT License).
+# Copyright (c) 2025. https://github.com/ee0pdt/godot-mcp
 extends EditorPlugin
 
 var tcp_server := TCPServer.new()

@@ -2,12 +2,14 @@ import fs from 'fs';
 import path from 'path';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
-import { logInfo, logError, logDebug, logWarn } from './logger.js';
+import { detectGodotPath } from '../core/path-manager.js';
+import { logInfo, logError, logWarn } from './logger.js';
 
 const execFileAsync = promisify(execFile);
 
 // Base URL for Godot docs archive by branch name
-const getDocsUrl = (branch: string) => `https://github.com/godotengine/godot-docs/archive/refs/heads/${branch}.zip`;
+const getDocsUrl = (branch: string) =>
+  `https://github.com/godotengine/godot-docs/archive/refs/heads/${branch}.zip`;
 
 // Path to store documentation versions
 const getDocsDir = (branch: string) => path.resolve(process.cwd(), `docs_cache_${branch}`);
@@ -17,7 +19,7 @@ export class DocsManager {
   private initialized = false;
   private currentBranch = 'master';
 
-  private constructor() { }
+  private constructor() {}
 
   static getInstance(): DocsManager {
     if (!DocsManager.instance) {
@@ -29,8 +31,6 @@ export class DocsManager {
   // Helper to get system Godot version branch (e.g., '4.3', '3.5')
   private async determineGodotBranch(): Promise<string> {
     try {
-      // Import dynamically to avoid circular dependencies if any
-      const { detectGodotPath } = await import('../core/path-manager.js');
       const godotPath = await detectGodotPath();
       if (godotPath) {
         const { stdout } = await execFileAsync(godotPath, ['--version']);
@@ -42,7 +42,9 @@ export class DocsManager {
         }
       }
     } catch (err) {
-      logWarn(`Could not detect Godot version for docs, defaulting to master. Error: ${(err as Error).message}`);
+      logWarn(
+        `Could not detect Godot version for docs, defaulting to master. Error: ${(err as Error).message}`,
+      );
     }
     return 'master';
   }
@@ -86,10 +88,13 @@ export class DocsManager {
     try {
       if (process.platform === 'win32') {
         await execFileAsync('powershell', [
-          '-NoProfile', '-Command',
+          '-NoProfile',
+          '-Command',
           'Expand-Archive',
-          '-Path', zipPath,
-          '-DestinationPath', docsDir,
+          '-Path',
+          zipPath,
+          '-DestinationPath',
+          docsDir,
           '-Force',
         ]);
       } else {
@@ -195,8 +200,8 @@ export class DocsManager {
 
     const items = fs.readdirSync(targetPath);
     return items
-      .filter(item => !item.startsWith('.'))
-      .map(item => {
+      .filter((item) => !item.startsWith('.'))
+      .map((item) => {
         const fullPath = path.join(targetPath, item);
         const isDir = fs.statSync(fullPath).isDirectory();
         return isDir ? `${item}/` : item;

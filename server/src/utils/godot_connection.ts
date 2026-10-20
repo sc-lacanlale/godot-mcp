@@ -36,11 +36,14 @@ export interface GodotConnectionOptions {
 export class GodotConnection {
   private ws: WebSocket | null = null;
   private connected = false;
-  private commandQueue: Map<string, {
-    resolve: (value: any) => void;
-    reject: (reason: any) => void;
-    timeout: NodeJS.Timeout;
-  }> = new Map();
+  private commandQueue: Map<
+    string,
+    {
+      resolve: (value: any) => void;
+      reject: (reason: any) => void;
+      timeout: NodeJS.Timeout;
+    }
+  > = new Map();
   private commandId = 0;
   private readonly url: string;
   private readonly timeout: number;
@@ -134,10 +137,10 @@ export class GodotConnection {
     if (this.connected) return;
     this.isExplicitlyDisconnected = false;
 
-    const baseUrl = this.url;  // e.g. 'ws://localhost:9080'
+    const baseUrl = this.url; // e.g. 'ws://localhost:9080'
     const basePort = parseInt(new URL(baseUrl).port || '9080', 10);
     const host = new URL(baseUrl).hostname;
-    const MAX_PORT_SCAN = 5;  // Try 9080..9084
+    const MAX_PORT_SCAN = 5; // Try 9080..9084
 
     // Try each port in the scan range, return on first success
     for (let p = basePort; p < basePort + MAX_PORT_SCAN; p++) {
@@ -145,7 +148,7 @@ export class GodotConnection {
       try {
         logInfo(`Trying Godot WebSocket at ${url}...`);
         await this.tryConnectUrl(url);
-        return;  // Connected!
+        return; // Connected!
       } catch {
         logDebug(`Port ${p} not responding, trying next...`);
       }
@@ -153,7 +156,7 @@ export class GodotConnection {
 
     throw new Error(
       `No Godot editor found on ports ${basePort}–${basePort + MAX_PORT_SCAN - 1}. ` +
-      'Ensure the GodotMCP addon is installed and enabled in the Godot editor.'
+        'Ensure the GodotMCP addon is installed and enabled in the Godot editor.',
     );
   }
 
@@ -174,7 +177,7 @@ export class GodotConnection {
     this.reconnectTimer = setTimeout(async () => {
       try {
         await this.connect();
-      } catch (err) {
+      } catch {
         // If it fails, rely on the 'close' or error catching inside `connect` to schedule another,
         // or we just call `scheduleReconnect` again if it threw without triggering a close
         if (!this.connected && !this.isExplicitlyDisconnected) {
@@ -212,11 +215,13 @@ export class GodotConnection {
       const timeoutId = setTimeout(() => {
         if (this.commandQueue.has(cmdId)) {
           this.commandQueue.delete(cmdId);
-          reject(new Error(
-            `Command timed out after ${this.timeout}ms: ${type}. ` +
-            `Ensure Godot editor is open with the GodotMCP addon running. ` +
-            `If a diff panel is showing, approve/reject it first.`
-          ));
+          reject(
+            new Error(
+              `Command timed out after ${this.timeout}ms: ${type}. ` +
+                `Ensure Godot editor is open with the GodotMCP addon running. ` +
+                `If a diff panel is showing, approve/reject it first.`,
+            ),
+          );
         }
       }, this.timeout);
 
@@ -231,9 +236,11 @@ export class GodotConnection {
       } else {
         clearTimeout(timeoutId);
         this.commandQueue.delete(cmdId);
-        reject(new Error(
-          'WebSocket not connected. Ensure the GodotMCP addon is installed and enabled in the Godot editor.',
-        ));
+        reject(
+          new Error(
+            'WebSocket not connected. Ensure the GodotMCP addon is installed and enabled in the Godot editor.',
+          ),
+        );
       }
     });
   }

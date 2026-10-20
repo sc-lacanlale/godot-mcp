@@ -3,9 +3,16 @@
  */
 
 import {
-  nodes, edges, setCurrentView, setSceneData, getFolderColor,
-  setExpandedScene, setExpandedSceneHierarchy, setSelectedSceneNode,
-  setHoveredSceneNode, expandedScene
+  nodes,
+  edges,
+  setCurrentView,
+  setSceneData,
+  getFolderColor,
+  setExpandedScene,
+  setExpandedSceneHierarchy,
+  setSelectedSceneNode,
+  setHoveredSceneNode,
+  expandedScene,
 } from './state.js';
 import { sendCommand } from './websocket.js';
 import { draw, getCanvas, roundRect, getContext, clearPositions, fitToView } from './canvas.js';
@@ -83,7 +90,7 @@ window.submitNewScript = async function () {
     const result = await sendCommand('create_script_file', {
       path: path,
       extends: extendsType,
-      class_name: className || ''
+      class_name: className || '',
     });
 
     if (result.ok) {
@@ -110,7 +117,7 @@ window.refreshProject = async function () {
         y: nodes[i]?.y || 0,
         color: getFolderColor(n.folder),
         highlighted: true,
-        visible: true
+        visible: true,
       }));
       nodes.length = 0;
       nodes.push(...newNodes);
@@ -143,7 +150,9 @@ window.resetLayout = function () {
 
 // ---- View Switching (Scripts/Scenes) ----
 window.switchView = function (view) {
-  const currentViewTab = document.querySelector('#view-tabs button.active')?.textContent.toLowerCase();
+  const currentViewTab = document
+    .querySelector('#view-tabs button.active')
+    ?.textContent.toLowerCase();
   if (view === currentViewTab) return;
 
   // Close any open panels
@@ -167,7 +176,7 @@ window.switchView = function (view) {
   setCurrentView(view);
 
   // Update tab buttons
-  document.querySelectorAll('#view-tabs button').forEach(btn => {
+  document.querySelectorAll('#view-tabs button').forEach((btn) => {
     btn.classList.toggle('active', btn.textContent.toLowerCase() === view);
   });
 

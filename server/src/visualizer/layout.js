@@ -13,9 +13,9 @@ export function initLayout() {
 
   // Build adjacency map for connected nodes
   const adjacency = new Map();
-  nodes.forEach(n => adjacency.set(n.path, []));
+  nodes.forEach((n) => adjacency.set(n.path, []));
 
-  edges.forEach(e => {
+  edges.forEach((e) => {
     if (adjacency.has(e.from) && adjacency.has(e.to)) {
       adjacency.get(e.from).push(e.to);
       adjacency.get(e.to).push(e.from);
@@ -24,14 +24,14 @@ export function initLayout() {
 
   // Find root nodes (most connections or extends nothing)
   const connectionCount = new Map();
-  nodes.forEach(n => {
+  nodes.forEach((n) => {
     const count = (adjacency.get(n.path) || []).length;
     connectionCount.set(n.path, count);
   });
 
   // Sort nodes by connection count (most connected first)
-  const sortedNodes = [...nodes].sort((a, b) =>
-    connectionCount.get(b.path) - connectionCount.get(a.path)
+  const sortedNodes = [...nodes].sort(
+    (a, b) => connectionCount.get(b.path) - connectionCount.get(a.path),
   );
 
   // Initial placement: spread nodes in a grid with good spacing
@@ -64,8 +64,8 @@ export function initLayout() {
 }
 
 function applyForces(alpha, adjacency) {
-  const repulsion = 50000;  // Strong repulsion
-  const attraction = 0.08;  // Moderate attraction
+  const repulsion = 50000; // Strong repulsion
+  const attraction = 0.08; // Moderate attraction
   const idealEdgeLength = MIN_SPACING_X * 1.2;
 
   // Repulsion between all nodes
@@ -101,9 +101,9 @@ function applyForces(alpha, adjacency) {
   }
 
   // Attraction along edges - pull connected nodes together
-  edges.forEach(e => {
-    const from = nodes.find(n => n.path === e.from);
-    const to = nodes.find(n => n.path === e.to);
+  edges.forEach((e) => {
+    const from = nodes.find((n) => n.path === e.from);
+    const to = nodes.find((n) => n.path === e.to);
     if (!from || !to) return;
 
     const dx = to.x - from.x;
@@ -166,10 +166,12 @@ function centerLayout() {
   if (nodes.length === 0) return;
 
   // Find bounding box
-  let minX = Infinity, maxX = -Infinity;
-  let minY = Infinity, maxY = -Infinity;
+  let minX = Infinity,
+    maxX = -Infinity;
+  let minY = Infinity,
+    maxY = -Infinity;
 
-  nodes.forEach(n => {
+  nodes.forEach((n) => {
     minX = Math.min(minX, n.x);
     maxX = Math.max(maxX, n.x);
     minY = Math.min(minY, n.y);
@@ -180,7 +182,7 @@ function centerLayout() {
   const centerX = (minX + maxX) / 2;
   const centerY = (minY + maxY) / 2;
 
-  nodes.forEach(n => {
+  nodes.forEach((n) => {
     n.x -= centerX;
     n.y -= centerY;
   });

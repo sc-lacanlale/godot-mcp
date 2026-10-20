@@ -9,7 +9,9 @@
 // Godot Expert system prompt
 // ---------------------------------------------------------------------------
 
-const GODOT_EXPERT_PROMPT = (godotVersion?: string) => `You are an expert Godot game engine developer with deep knowledge of ${godotVersion ? `Godot ${godotVersion}` : 'Godot 4.x'} and GDScript.
+const GODOT_EXPERT_PROMPT = (
+  godotVersion?: string,
+) => `You are an expert Godot game engine developer with deep knowledge of ${godotVersion ? `Godot ${godotVersion}` : 'Godot 4.x'} and GDScript.
 
 ## Core Expertise
 - **GDScript**: You write clean, idiomatic GDScript following official style conventions (snake_case functions/variables, PascalCase classes, UPPER_SNAKE_CASE constants).
@@ -55,7 +57,7 @@ Use these tools proactively to verify your changes work. After creating or editi
 // ---------------------------------------------------------------------------
 
 const DEBUG_PROMPT = (errorMessage: string, projectPath?: string) =>
-    `You are debugging a Godot project${projectPath ? ` at "${projectPath}"` : ''}.
+  `You are debugging a Godot project${projectPath ? ` at "${projectPath}"` : ''}.
 
 ## Error to Investigate
 \`\`\`
@@ -95,7 +97,7 @@ Follow this systematic approach:
 // ---------------------------------------------------------------------------
 
 const CREATE_FEATURE_PROMPT = (featureDescription: string) =>
-    `You are implementing a new game feature in a Godot project.
+  `You are implementing a new game feature in a Godot project.
 
 ## Feature Request
 ${featureDescription}
@@ -141,7 +143,7 @@ ${featureDescription}
 // ---------------------------------------------------------------------------
 
 const CREATE_LEVEL_PROMPT = (levelDescription: string, referenceScene?: string) =>
-    `You are creating a new playable 2D game level in a Godot project.
+  `You are creating a new playable 2D game level in a Godot project.
 
 ## Level Request
 ${levelDescription}
@@ -153,9 +155,11 @@ Before creating ANYTHING, you MUST call these tools:
 
 1. \`get_project_assets\` — Discover all existing scenes, scripts, tilesets, and textures.
    Look for: player scenes, enemy scenes, TileSet resources (.tres), tilesheets (.png).
-2. \`get_project_context\` — ${referenceScene
-        ? `Study the reference scene "${referenceScene}" to understand the project's level design patterns.`
-        : 'Study an existing level scene (if any) to understand the project\'s level design patterns.'}
+2. \`get_project_context\` — ${
+    referenceScene
+      ? `Study the reference scene "${referenceScene}" to understand the project's level design patterns.`
+      : "Study an existing level scene (if any) to understand the project's level design patterns."
+  }
 
 **YOU MUST REUSE EXISTING ASSETS.** Never recreate a player, enemy, or tileset that already exists.
 
@@ -276,98 +280,99 @@ position = Vector2(400, 560)
 // ---------------------------------------------------------------------------
 
 export interface MCPPrompt {
+  name: string;
+  description: string;
+  arguments?: Array<{
     name: string;
-    description: string;
-    arguments?: Array<{
-        name: string;
-        description?: string;
-        required?: boolean;
-    }>;
-    load: (args: Record<string, string | undefined>) => Promise<string>;
+    description?: string;
+    required?: boolean;
+  }>;
+  load: (args: Record<string, string | undefined>) => Promise<string>;
 }
 
 export const godotPrompts: MCPPrompt[] = [
-    {
-        name: 'godot_expert',
-        description:
-            'System prompt that makes the AI a Godot game development expert — ' +
-            'covers GDScript best practices, node architecture, scene composition, ' +
-            'signals, common pitfalls, and available MCP tools.',
-        arguments: [
-            {
-                name: 'godot_version',
-                description: 'Godot version (e.g. "4.4", "4.3"). Defaults to "4.x".',
-                required: false,
-            },
-        ],
-        load: async (args) => {
-            return GODOT_EXPERT_PROMPT(args.godot_version);
-        },
+  {
+    name: 'godot_expert',
+    description:
+      'System prompt that makes the AI a Godot game development expert — ' +
+      'covers GDScript best practices, node architecture, scene composition, ' +
+      'signals, common pitfalls, and available MCP tools.',
+    arguments: [
+      {
+        name: 'godot_version',
+        description: 'Godot version (e.g. "4.4", "4.3"). Defaults to "4.x".',
+        required: false,
+      },
+    ],
+    load: async (args) => {
+      return GODOT_EXPERT_PROMPT(args.godot_version);
     },
+  },
 
-    {
-        name: 'debug_godot_project',
-        description:
-            'Structured prompt for debugging a failing Godot project: ' +
-            'gather errors → analyze root cause → fix → verify with run_and_verify.',
-        arguments: [
-            {
-                name: 'error_message',
-                description: 'The error message or description of the problem to debug.',
-                required: true,
-            },
-            {
-                name: 'project_path',
-                description: 'Absolute path to the Godot project (optional).',
-                required: false,
-            },
-        ],
-        load: async (args) => {
-            return DEBUG_PROMPT(args.error_message ?? 'Unknown error', args.project_path);
-        },
+  {
+    name: 'debug_godot_project',
+    description:
+      'Structured prompt for debugging a failing Godot project: ' +
+      'gather errors → analyze root cause → fix → verify with run_and_verify.',
+    arguments: [
+      {
+        name: 'error_message',
+        description: 'The error message or description of the problem to debug.',
+        required: true,
+      },
+      {
+        name: 'project_path',
+        description: 'Absolute path to the Godot project (optional).',
+        required: false,
+      },
+    ],
+    load: async (args) => {
+      return DEBUG_PROMPT(args.error_message ?? 'Unknown error', args.project_path);
     },
+  },
 
-    {
-        name: 'create_game_feature',
-        description:
-            'Step-by-step prompt for implementing a new game feature: ' +
-            'plan nodes → create scene → write scripts → test with run_and_verify.',
-        arguments: [
-            {
-                name: 'feature_description',
-                description: 'Description of the game feature to implement.',
-                required: true,
-            },
-        ],
-        load: async (args) => {
-            return CREATE_FEATURE_PROMPT(args.feature_description ?? 'New game feature');
-        },
+  {
+    name: 'create_game_feature',
+    description:
+      'Step-by-step prompt for implementing a new game feature: ' +
+      'plan nodes → create scene → write scripts → test with run_and_verify.',
+    arguments: [
+      {
+        name: 'feature_description',
+        description: 'Description of the game feature to implement.',
+        required: true,
+      },
+    ],
+    load: async (args) => {
+      return CREATE_FEATURE_PROMPT(args.feature_description ?? 'New game feature');
     },
+  },
 
-    {
-        name: 'create_game_level',
+  {
+    name: 'create_game_level',
+    description:
+      'Comprehensive prompt for creating a playable 2D game level that uses ' +
+      'proper TileMap floors/walls, instances existing player/enemy scenes, ' +
+      'and follows level design best practices. Prevents common mistakes like ' +
+      'using ColorRect backgrounds or recreating assets from scratch.',
+    arguments: [
+      {
+        name: 'level_description',
+        description: 'Description of the level to create (theme, layout, difficulty).',
+        required: true,
+      },
+      {
+        name: 'reference_scene',
         description:
-            'Comprehensive prompt for creating a playable 2D game level that uses ' +
-            'proper TileMap floors/walls, instances existing player/enemy scenes, ' +
-            'and follows level design best practices. Prevents common mistakes like ' +
-            'using ColorRect backgrounds or recreating assets from scratch.',
-        arguments: [
-            {
-                name: 'level_description',
-                description: 'Description of the level to create (theme, layout, difficulty).',
-                required: true,
-            },
-            {
-                name: 'reference_scene',
-                description: 'Path to an existing level scene to study for patterns (e.g. "res://scenes/dungeon_level.tscn").',
-                required: false,
-            },
-        ],
-        load: async (args) => {
-            return CREATE_LEVEL_PROMPT(
-                args.level_description ?? 'A new game level',
-                args.reference_scene,
-            );
-        },
+          'Path to an existing level scene to study for patterns (e.g. "res://scenes/dungeon_level.tscn").',
+        required: false,
+      },
+    ],
+    load: async (args) => {
+      return CREATE_LEVEL_PROMPT(
+        args.level_description ?? 'A new game level',
+        args.reference_scene,
+      );
     },
+  },
 ];

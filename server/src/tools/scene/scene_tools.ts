@@ -30,53 +30,90 @@ export const sceneTools: MCPTool[] = [
       '"set_sprite_texture" to assign a texture to a Sprite2D/3D/TextureRect.',
     parameters: z.object({
       action: z
-        .enum(['create', 'save', 'open', 'get_current', 'get_info', 'create_resource', 'rename_node', 'move_node', 'set_collision_shape', 'set_sprite_texture'])
+        .enum([
+          'create',
+          'save',
+          'open',
+          'get_current',
+          'get_info',
+          'create_resource',
+          'rename_node',
+          'move_node',
+          'set_collision_shape',
+          'set_sprite_texture',
+        ])
         .describe('Which scene action to perform'),
-      path: z.string().optional().describe(
-        'Path for the scene or resource. E.g. "res://scenes/main.tscn". ' +
-        'Required for: create, open. Optional for: save (uses current scene path if omitted).'
-      ),
-      root_node_type: z.string().optional().describe(
-        'Type of root node for new scene (e.g. "Node2D", "Node3D", "Control"). Default: "Node". Used for: create.'
-      ),
-      resource_type: z.string().optional().describe(
-        'Type of resource to create (e.g. "ImageTexture", "StyleBoxFlat"). Required for: create_resource.'
-      ),
-      resource_path: z.string().optional().describe(
-        'Path where the resource will be saved. Required for: create_resource.'
-      ),
-      properties: z.record(z.any()).optional().describe(
-        'Dictionary of property values to set on a resource. Used for: create_resource.'
-      ),
-      node_path: z.string().optional().describe(
-        'Path to the node within the scene (e.g. "Player/Sprite2D"). ' +
-        'Required for: rename_node, move_node, set_collision_shape, set_sprite_texture.'
-      ),
-      new_name: z.string().optional().describe(
-        'New name for the node. Required for: rename_node.'
-      ),
-      new_parent_path: z.string().optional().describe(
-        'Path to the new parent node. Required for: move_node.'
-      ),
-      sibling_index: z.number().optional().describe(
-        'Child index position in the new parent (-1 for last). Used for: move_node.'
-      ),
-      shape_type: z.string().optional().describe(
-        'Shape class name (e.g. "CircleShape2D", "RectangleShape2D", "BoxShape3D", "CapsuleShape2D"). ' +
-        'Required for: set_collision_shape.'
-      ),
-      shape_params: z.record(z.any()).optional().describe(
-        'Shape configuration (e.g. {"radius": 32} for CircleShape2D, {"size": {"x": 64, "y": 32}} for RectangleShape2D). ' +
-        'Used for: set_collision_shape.'
-      ),
-      texture_type: z.string().optional().describe(
-        'Texture class: "ImageTexture", "PlaceholderTexture2D", "GradientTexture2D", or "NoiseTexture2D". ' +
-        'Default: "ImageTexture". Used for: set_sprite_texture.'
-      ),
-      texture_params: z.record(z.any()).optional().describe(
-        'Texture configuration (e.g. {"path": "res://icon.svg"} for ImageTexture, {"size": {"x": 64, "y": 64}} for Placeholder). ' +
-        'Used for: set_sprite_texture.'
-      ),
+      path: z
+        .string()
+        .optional()
+        .describe(
+          'Path for the scene or resource. E.g. "res://scenes/main.tscn". ' +
+            'Required for: create, open. Optional for: save (uses current scene path if omitted).',
+        ),
+      root_node_type: z
+        .string()
+        .optional()
+        .describe(
+          'Type of root node for new scene (e.g. "Node2D", "Node3D", "Control"). Default: "Node". Used for: create.',
+        ),
+      resource_type: z
+        .string()
+        .optional()
+        .describe(
+          'Type of resource to create (e.g. "ImageTexture", "StyleBoxFlat"). Required for: create_resource.',
+        ),
+      resource_path: z
+        .string()
+        .optional()
+        .describe('Path where the resource will be saved. Required for: create_resource.'),
+      properties: z
+        .record(z.any())
+        .optional()
+        .describe('Dictionary of property values to set on a resource. Used for: create_resource.'),
+      node_path: z
+        .string()
+        .optional()
+        .describe(
+          'Path to the node within the scene (e.g. "Player/Sprite2D"). ' +
+            'Required for: rename_node, move_node, set_collision_shape, set_sprite_texture.',
+        ),
+      new_name: z.string().optional().describe('New name for the node. Required for: rename_node.'),
+      new_parent_path: z
+        .string()
+        .optional()
+        .describe('Path to the new parent node. Required for: move_node.'),
+      sibling_index: z
+        .number()
+        .optional()
+        .describe('Child index position in the new parent (-1 for last). Used for: move_node.'),
+      shape_type: z
+        .string()
+        .optional()
+        .describe(
+          'Shape class name (e.g. "CircleShape2D", "RectangleShape2D", "BoxShape3D", "CapsuleShape2D"). ' +
+            'Required for: set_collision_shape.',
+        ),
+      shape_params: z
+        .record(z.any())
+        .optional()
+        .describe(
+          'Shape configuration (e.g. {"radius": 32} for CircleShape2D, {"size": {"x": 64, "y": 32}} for RectangleShape2D). ' +
+            'Used for: set_collision_shape.',
+        ),
+      texture_type: z
+        .string()
+        .optional()
+        .describe(
+          'Texture class: "ImageTexture", "PlaceholderTexture2D", "GradientTexture2D", or "NoiseTexture2D". ' +
+            'Default: "ImageTexture". Used for: set_sprite_texture.',
+        ),
+      texture_params: z
+        .record(z.any())
+        .optional()
+        .describe(
+          'Texture configuration (e.g. {"path": "res://icon.svg"} for ImageTexture, {"size": {"x": 64, "y": 64}} for Placeholder). ' +
+            'Used for: set_sprite_texture.',
+        ),
     }),
     execute: async (params: Record<string, unknown>): Promise<string> => {
       const action = params.action as string;
@@ -89,7 +126,10 @@ export const sceneTools: MCPTool[] = [
             if (!path) throw new Error('path is required for action "create"');
             const root_node_type = (params.root_node_type as string) ?? 'Node';
 
-            const result = await godot.sendCommand<CommandResult>('create_scene', { path, root_node_type });
+            const result = await godot.sendCommand<CommandResult>('create_scene', {
+              path,
+              root_node_type,
+            });
             return `Created new scene at ${result.scene_path} with root node type ${result.root_node_type}`;
           }
 
@@ -129,8 +169,10 @@ export const sceneTools: MCPTool[] = [
           case 'create_resource': {
             const resource_type = params.resource_type as string;
             const resource_path = params.resource_path as string;
-            if (!resource_type) throw new Error('resource_type is required for action "create_resource"');
-            if (!resource_path) throw new Error('resource_path is required for action "create_resource"');
+            if (!resource_type)
+              throw new Error('resource_type is required for action "create_resource"');
+            if (!resource_path)
+              throw new Error('resource_path is required for action "create_resource"');
 
             const result = await godot.sendCommand<CommandResult>('create_resource', {
               resource_type,
@@ -146,7 +188,10 @@ export const sceneTools: MCPTool[] = [
             if (!node_path) throw new Error('node_path is required for action "rename_node"');
             if (!new_name) throw new Error('new_name is required for action "rename_node"');
 
-            const result = await godot.sendCommand<CommandResult>('rename_node', { node_path, new_name });
+            const result = await godot.sendCommand<CommandResult>('rename_node', {
+              node_path,
+              new_name,
+            });
             return `Renamed node "${result.old_name}" to "${result.new_name}" (path: ${result.node_path})`;
           }
 
@@ -154,7 +199,8 @@ export const sceneTools: MCPTool[] = [
             const node_path = params.node_path as string;
             const new_parent_path = params.new_parent_path as string;
             if (!node_path) throw new Error('node_path is required for action "move_node"');
-            if (!new_parent_path) throw new Error('new_parent_path is required for action "move_node"');
+            if (!new_parent_path)
+              throw new Error('new_parent_path is required for action "move_node"');
 
             const result = await godot.sendCommand<CommandResult>('move_node', {
               node_path,
@@ -167,8 +213,10 @@ export const sceneTools: MCPTool[] = [
           case 'set_collision_shape': {
             const node_path = params.node_path as string;
             const shape_type = params.shape_type as string;
-            if (!node_path) throw new Error('node_path is required for action "set_collision_shape"');
-            if (!shape_type) throw new Error('shape_type is required for action "set_collision_shape"');
+            if (!node_path)
+              throw new Error('node_path is required for action "set_collision_shape"');
+            if (!shape_type)
+              throw new Error('shape_type is required for action "set_collision_shape"');
 
             const result = await godot.sendCommand<CommandResult>('set_collision_shape', {
               node_path,
@@ -180,7 +228,8 @@ export const sceneTools: MCPTool[] = [
 
           case 'set_sprite_texture': {
             const node_path = params.node_path as string;
-            if (!node_path) throw new Error('node_path is required for action "set_sprite_texture"');
+            if (!node_path)
+              throw new Error('node_path is required for action "set_sprite_texture"');
 
             const result = await godot.sendCommand<CommandResult>('set_sprite_texture', {
               node_path,
