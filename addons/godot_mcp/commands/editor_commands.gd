@@ -19,6 +19,12 @@ func process_command(client_id: int, command_type: String, params: Dictionary, c
 		"capture_game_screenshot":
 			_capture_game_screenshot(client_id, params, command_id)
 			return true
+		"capture_scene_preview":
+			_capture_scene_preview(client_id, params, command_id)
+			return true
+		"set_debug_draw":
+			_set_debug_draw(client_id, params, command_id)
+			return true
 	return false  # Command not handled
 
 func _get_editor_state(client_id: int, params: Dictionary, command_id: String) -> void:
@@ -241,3 +247,89 @@ func _capture_viewport(client_id: int, params: Dictionary, command_id: String) -
 		"path": path,
 		"absolute_path": abs_path
 	}, command_id)
+
+func _capture_scene_preview(client_id: int, params: Dictionary, command_id: String) -> void:
+	var scene_path = str(params.get("scene_path", ""))
+	if scene_path.is_empty():
+		return _send_error(client_id, "scene_path is required", command_id)
+	if not scene_path.begins_with("res://"):
+		scene_path = "res://" + scene_path
+	if not ResourceLoader.exists(scene_path):
+		return _send_error(client_id, "Scene not found: %s" % scene_path, command_id)
+
+	var packed = load(scene_path) as PackedScene
+	if packed == null:
+		return _send_error(client_id, "Failed to load scene: %s" % scene_path, command_id)
+
+	var viewport := SubViewport.new()
+	viewport.size = Vector2i(256, 256)
+	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	viewport.transparent_bg = false
+	add_child(viewport)
+
+	var instance = packed.instantiate()
+	viewport.add_child(instance)
+	# Two frames so the viewport texture is populated.
+	await get_tree().process_frame
+	await get_tree().process_frame
+
+	var texture = viewport.get_texture()
+	if texture == null:
+		viewport.queue_free()
+		return _send_error(client_id, "Scene preview viewport has no texture", command_id)
+
+	var image = texture.get_image()
+	if image == null:
+		viewport.queue_free()
+		return _send_error(client_id, "Failed to read scene preview image", command_id)
+
+	var path = "user://mcp_scene_preview.png"
+	var err = image.save_png(path)
+	viewport.queue_free()
+	if err != OK:
+		return _send_error(client_id, "Failed to save scene preview: %s" % err, command_id)
+
+	_send_success(client_id, {
+		"path": path,
+		"absolute_path": ProjectSettings.globalize_path(path),
+		"scene_path": scene_path
+	}, command_id)
+
+func _set_debug_draw(client_id: int, params: Dictionary, command_id: String) -> void:
+	var mode = str(params.get("mode", "")).to_lower()
+	var modes = {
+		"disabled": Viewport.DEBUG_DRAW_DISABLED,
+		"unshaded": Viewport.DEBUG_DRAW_UNSHADED,
+		"lighting": Viewport.DEBUG_DRAW_LIGHTING,
+		"overdraw": Viewport.DEBUG_DRAW_OVERDRAW,
+		"wireframe": Viewport.DEBUG_DRAW_WIREFRAME
+	}
+	if not modes.has(mode):
+		return _send_error(client_id, "Unknown debug draw mode: %s" % mode, command_id)
+
+	var plugin = Engine.get_meta("GodotMCPPlugin")
+	if not plugin:
+		return _send_error(client_id, "GodotMCPPlugin not found in Engine metadata", command_id)
+
+	var editor_interface = plugin.get_editor_interface()
+	var applied = 0
+	if editor_interface.has_method("get_editor_viewport_2d"):
+		var viewport_2d = editor_interface.get_editor_viewport_2d()
+		if viewport_2d:
+			viewport_2d.debug_draw = modes[mode]
+			applied += 1
+
+	var viewport_count = 1
+	if editor_interface.has_method("get_editor_viewport_3d_count"):
+		viewport_count = editor_interface.get_editor_viewport_3d_count()
+	if editor_interface.has_method("get_editor_viewport_3d"):
+		for index in viewport_count:
+			var viewport_3d = editor_interface.get_editor_viewport_3d(index)
+			if viewport_3d:
+				viewport_3d.debug_draw = modes[mode]
+				applied += 1
+
+	if applied == 0:
+		return _send_error(client_id, "No editor viewport accepted debug draw mode %s" % mode, command_id)
+
+	_send_success(client_id, {"mode": mode, "viewports": applied}, command_id)

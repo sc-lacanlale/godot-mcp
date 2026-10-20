@@ -25,6 +25,18 @@ func process_command(client_id: int, command_type: String, params: Dictionary, c
 		"load_sprite":
 			_load_sprite(client_id, params, command_id)
 			return true
+		"duplicate_node":
+			_duplicate_node(client_id, params, command_id)
+			return true
+		"get_tree_dump":
+			_get_tree_dump(client_id, params, command_id)
+			return true
+		"set_physics_material":
+			_set_physics_material(client_id, params, command_id)
+			return true
+		"configure_menu":
+			_configure_menu(client_id, params, command_id)
+			return true
 	return false  # Command not handled
 
 func _create_node(client_id: int, params: Dictionary, command_id: String) -> void:
@@ -197,8 +209,9 @@ func _update_node_property(client_id: int, params: Dictionary, command_id: Strin
 	if not node:
 		return _send_error(client_id, "Node not found: %s" % node_path, command_id)
 	
-	# Check if the property exists
-	if not property_name in node:
+	# Theme overrides are real properties ("theme_override_colors/font_color") but
+	# the `in` operator only sees the base property list.
+	if not property_name in node and not property_name.begins_with("theme_override_"):
 		return _send_error(client_id, "Property %s does not exist on node %s" % [property_name, node_path], command_id)
 	
 	# Parse property value for Godot types
@@ -452,3 +465,124 @@ func _load_sprite(client_id: int, params: Dictionary, command_id: String) -> voi
 		"texture_path": texture_path,
 		"node_type": node.get_class()
 	}, command_id)
+
+func _duplicate_node(client_id: int, params: Dictionary, command_id: String) -> void:
+	var node_path = params.get("node_path", "")
+	if node_path.is_empty():
+		return _send_error(client_id, "Node path cannot be empty", command_id)
+
+	var plugin = Engine.get_meta("GodotMCPPlugin")
+	if not plugin:
+		return _send_error(client_id, "GodotMCPPlugin not found in Engine metadata", command_id)
+
+	var edited_scene_root = plugin.get_editor_interface().get_edited_scene_root()
+	if not edited_scene_root:
+		return _send_error(client_id, "No scene is currently being edited", command_id)
+
+	var node = _get_editor_node(node_path)
+	if not node:
+		return _send_error(client_id, "Node not found: %s" % node_path, command_id)
+	if node == edited_scene_root:
+		return _send_error(client_id, "Cannot duplicate the scene root", command_id)
+
+	var copy = node.duplicate()
+	var new_name = str(params.get("new_name", ""))
+	if new_name.is_empty():
+		new_name = str(node.name) + "_copy"
+	copy.name = new_name
+
+	var parent = node.get_parent()
+	parent.add_child(copy)
+	parent.move_child(copy, node.get_index() + 1)
+	_own_recursive(copy, edited_scene_root)
+	_mark_scene_modified()
+
+	var rel = str(edited_scene_root.get_path_to(copy))
+	_send_success(client_id, {
+		"name": str(copy.name),
+		"new_node_path": rel
+	}, command_id)
+
+func _own_recursive(node: Node, owner: Node) -> void:
+	node.owner = owner
+	for child in node.get_children():
+		_own_recursive(child, owner)
+
+func _get_tree_dump(client_id: int, params: Dictionary, command_id: String) -> void:
+	var root = _get_editor_node(params.get("root_path", "/root"))
+	if not root:
+		return _send_error(client_id, "Node not found: %s" % params.get("root_path", "/root"), command_id)
+
+	var plugin = Engine.get_meta("GodotMCPPlugin")
+	var scene_root = plugin.get_editor_interface().get_edited_scene_root() if plugin else root
+	var max_depth = int(params.get("max_depth", -1))
+	var filter_type = str(params.get("filter_type", ""))
+	var tree: Array = []
+	_collect_tree(root, scene_root, tree, 0, max_depth, filter_type)
+	_send_success(client_id, {"tree": tree}, command_id)
+
+func _collect_tree(node: Node, scene_root: Node, tree: Array, depth: int, max_depth: int, filter_type: String) -> void:
+	var include = filter_type.is_empty() or node.get_class() == filter_type or node.is_class(filter_type)
+	if include:
+		var path = "/root"
+		if node != scene_root:
+			path = "/root/" + str(scene_root.get_path_to(node))
+		tree.append({
+			"name": str(node.name),
+			"type": node.get_class(),
+			"path": path,
+			"children_count": node.get_child_count()
+		})
+	if max_depth >= 0 and depth >= max_depth:
+		return
+	for child in node.get_children():
+		_collect_tree(child, scene_root, tree, depth + 1, max_depth, filter_type)
+
+func _set_physics_material(client_id: int, params: Dictionary, command_id: String) -> void:
+	var node_path = str(params.get("node_path", ""))
+	var node = _get_editor_node(node_path)
+	if not node:
+		return _send_error(client_id, "Node not found: %s" % node_path, command_id)
+	if not (node is CollisionObject2D or node is CollisionObject3D):
+		return _send_error(client_id, "Node is not a physics body: %s" % node_path, command_id)
+
+	var mat = node.physics_material_override
+	if mat == null:
+		mat = PhysicsMaterial.new()
+	if params.has("friction"):
+		mat.friction = float(params["friction"])
+	if params.has("bounce"):
+		mat.bounce = float(params["bounce"])
+	node.physics_material_override = mat
+	_mark_scene_modified()
+	_send_success(client_id, {
+		"node_path": node_path,
+		"friction": mat.friction,
+		"bounce": mat.bounce
+	}, command_id)
+
+func _configure_menu(client_id: int, params: Dictionary, command_id: String) -> void:
+	var menu_path = str(params.get("menu_path", ""))
+	var node = _get_editor_node(menu_path)
+	if not node:
+		return _send_error(client_id, "Node not found: %s" % menu_path, command_id)
+
+	var menu = node
+	if node is MenuButton:
+		menu = node.get_popup()
+	if not menu is PopupMenu:
+		return _send_error(client_id, "Node is not a menu: %s" % menu_path, command_id)
+
+	menu.clear()
+	var items = params.get("items", [])
+	var added = 0
+	for item in items:
+		if typeof(item) != TYPE_DICTIONARY:
+			continue
+		if bool(item.get("separator", false)):
+			menu.add_separator(str(item.get("label", "")))
+		else:
+			menu.add_item(str(item.get("label", "")), int(item.get("id", -1)))
+		added += 1
+	_mark_scene_modified()
+	_send_success(client_id, {"menu_path": menu_path, "count": added}, command_id)

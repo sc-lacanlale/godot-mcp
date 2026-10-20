@@ -46,13 +46,8 @@ import { logInfo, logWarn, logError, logDebug } from './utils/logger.js';
 import { loadConfig } from './config/config.js';
 
 // Resources
-import {
-  sceneListResource,
-  sceneStructureResource,
-} from './resources/scene_resources.js';
-import {
-  scriptListResource,
-} from './resources/script_resources.js';
+import { sceneListResource, sceneStructureResource } from './resources/scene_resources.js';
+import { scriptListResource } from './resources/script_resources.js';
 import {
   projectStructureResource,
   projectSettingsResource,
@@ -67,19 +62,29 @@ import {
 /**
  * Main entry point for the consolidated Godot MCP server.
  */
+function readPackageVersion(): `${number}.${number}.${number}` {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const packageJsonPath = path.resolve(here, '..', '..', 'package.json');
+  const parsed = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8')) as { version?: string };
+  const version = parsed.version ?? '0.0.0';
+  if (!/^\d+\.\d+\.\d+$/.test(version)) {
+    throw new Error(`package.json version must be major.minor.patch, received "${version}"`);
+  }
+  return version as `${number}.${number}.${number}`;
+}
+
 async function main() {
   // ---------------------------------------------------------------------------
   // Check for CLI args (e.g. `npx godot-mcp install`)
   // ---------------------------------------------------------------------------
   const args = process.argv.slice(2);
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const rootDir = path.resolve(here, '..', '..');
   if (args.includes('install')) {
     logInfo('Running Godot MCP installation utility...');
     const targetDir = path.join(process.cwd(), 'addons');
 
-    // We are running from dist/index.js, so we need to step up to the repository root
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    const rootDir = path.resolve(__dirname, '..', '..');
+    // dist/index.js lives at <package>/server/dist, so the package root is two levels up.
     const sourceAddonDir = path.join(rootDir, 'addons', 'godot_mcp');
 
     if (!fs.existsSync(sourceAddonDir)) {
@@ -98,7 +103,7 @@ async function main() {
     fs.mkdirSync(targetDir, { recursive: true });
     fs.cpSync(sourceAddonDir, targetAddonDir, { recursive: true });
 
-    logInfo('✓ Installation successful!');
+    logInfo('Installation successful.');
     logInfo('Next steps:');
     logInfo('  1. Open your Godot project.');
     logInfo('  2. Go to Project -> Project Settings -> Plugins.');
@@ -113,7 +118,7 @@ async function main() {
   // Create FastMCP instance
   const server = new FastMCP({
     name: 'GodotMCP',
-    version: '1.0.0',
+    version: readPackageVersion(),
   });
 
   // ---------------------------------------------------------------------------
@@ -155,6 +160,7 @@ async function main() {
   registry.registerBatch(physicsTools, { readOnly: false, category: 'physics' });
   registry.registerBatch(animationTools, { readOnly: false, category: 'animation' });
   registry.registerBatch(uiTools, { readOnly: false, category: 'ui' });
+  registry.registerBatch(audioTools, { readOnly: false, category: 'audio' });
 
   // Introspection & visualization (read-only — inspect but don't mutate)
   registry.registerBatch(inspectTools, { readOnly: false, category: 'inspect' });
@@ -173,7 +179,9 @@ async function main() {
     server.addTool(tool);
   }
 
-  logInfo(`Registered ${filteredTools.length} tools (${registry.size} total, ${config.readOnlyMode ? 'READ_ONLY' : 'READ_WRITE'} mode)`);
+  logInfo(
+    `Registered ${filteredTools.length} tools (${registry.size} total, ${config.readOnlyMode ? 'READ_ONLY' : 'READ_WRITE'} mode)`,
+  );
   logDebug(`Tools by category: ${JSON.stringify(registry.getToolsByCategory())}`);
 
   // ---------------------------------------------------------------------------
@@ -236,7 +244,7 @@ async function main() {
     const session = event.session;
     const roots = session.roots ?? [];
     if (roots.length > 0) {
-      logInfo(`IDE workspace roots received: ${roots.map(r => r.uri).join(', ')}`);
+      logInfo(`IDE workspace roots received: ${roots.map((r) => r.uri).join(', ')}`);
       setClientRoots(roots);
     } else {
       logDebug('No workspace roots from client — will fall back to CWD detection');
@@ -244,7 +252,7 @@ async function main() {
     // Also listen for changes (user opens a different folder mid-session)
     session.on('rootsChanged', (event) => {
       const newRoots = event.roots ?? [];
-      logInfo(`IDE workspace roots updated: ${newRoots.map(r => r.uri).join(', ')}`);
+      logInfo(`IDE workspace roots updated: ${newRoots.map((r) => r.uri).join(', ')}`);
       setClientRoots(newRoots);
     });
   });
@@ -252,7 +260,10 @@ async function main() {
   // ---------------------------------------------------------------------------
   // Start the MCP server (stdio transport)
   // ---------------------------------------------------------------------------
-  server.start({ transportType: 'stdio' });
+  void server.start({ transportType: 'stdio' }).catch((error: unknown) => {
+    logError(`MCP transport stopped: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  });
   logInfo('Godot MCP server started (stdio transport)');
 
   // ---------------------------------------------------------------------------

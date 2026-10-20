@@ -29,43 +29,75 @@ export const nodeTools: MCPTool[] = [
       'to discover available properties before updating.',
     parameters: z.object({
       action: z
-        .enum(['create', 'delete', 'update_property', 'get_properties', 'list', 'duplicate', 'query', 'add_particles'])
+        .enum([
+          'create',
+          'delete',
+          'update_property',
+          'get_properties',
+          'list',
+          'duplicate',
+          'query',
+          'add_particles',
+        ])
         .describe('Which node action to perform'),
-      node_path: z.string().optional().describe(
-        'Path to the target node. Examples: "/root" for scene root, "Player", "Enemies/Golem1". ' +
-        'Required for: delete, update_property, get_properties, duplicate.'
-      ),
-      parent_path: z.string().optional().describe(
-        'Path to the parent node. Required for: create, list. ' +
-        'Use "/root" for the scene root.'
-      ),
-      node_type: z.string().optional().describe(
-        'Type of node to create (e.g. "Node2D", "Sprite2D", "Label"). Required for: create.'
-      ),
-      node_name: z.string().optional().describe(
-        'Name for the new node. Required for: create.'
-      ),
-      property: z.string().optional().describe(
-        'Name of the property to update (e.g. "position", "text", "modulate"). Required for: update_property.'
-      ),
-      value: z.any().optional().describe(
-        'New value for the property. Required for: update_property.'
-      ),
-      new_name: z.string().optional().describe(
-        'Optional name for the duplicate. Defaults to "OriginalName_copy". Used for: duplicate.'
-      ),
-      particle_type: z.string().optional().describe(
-        'Type of particle system: "GPUParticles2D" or "GPUParticles3D". Required for: add_particles.'
-      ),
-      particle_properties: z.object({
-        amount: z.number().optional().describe('Number of particles (default: 8)'),
-        lifetime: z.number().optional().describe('Lifetime in seconds (default: 1.0)'),
-        one_shot: z.boolean().optional().describe('Emit once then stop (default: false)'),
-        preprocess: z.number().optional().describe('Seconds to pre-simulate (default: 0)'),
-        speed_scale: z.number().optional().describe('Speed multiplier (default: 1.0)'),
-        explosiveness: z.number().optional().describe('0=steady stream, 1=all at once (default: 0)'),
-        randomness: z.number().optional().describe('Randomness ratio (default: 0)'),
-      }).optional().describe('Particle-specific properties. Used for: add_particles.'),
+      node_path: z
+        .string()
+        .optional()
+        .describe(
+          'Path to the target node. Examples: "/root" for scene root, "Player", "Enemies/Golem1". ' +
+            'Required for: delete, update_property, get_properties, duplicate.',
+        ),
+      parent_path: z
+        .string()
+        .optional()
+        .describe(
+          'Path to the parent node. Required for: create, list. ' +
+            'Use "/root" for the scene root.',
+        ),
+      node_type: z
+        .string()
+        .optional()
+        .describe(
+          'Type of node to create (e.g. "Node2D", "Sprite2D", "Label"). Required for: create.',
+        ),
+      node_name: z.string().optional().describe('Name for the new node. Required for: create.'),
+      property: z
+        .string()
+        .optional()
+        .describe(
+          'Name of the property to update (e.g. "position", "text", "modulate"). Required for: update_property.',
+        ),
+      value: z
+        .any()
+        .optional()
+        .describe('New value for the property. Required for: update_property.'),
+      new_name: z
+        .string()
+        .optional()
+        .describe(
+          'Optional name for the duplicate. Defaults to "OriginalName_copy". Used for: duplicate.',
+        ),
+      particle_type: z
+        .string()
+        .optional()
+        .describe(
+          'Type of particle system: "GPUParticles2D" or "GPUParticles3D". Required for: add_particles.',
+        ),
+      particle_properties: z
+        .object({
+          amount: z.number().optional().describe('Number of particles (default: 8)'),
+          lifetime: z.number().optional().describe('Lifetime in seconds (default: 1.0)'),
+          one_shot: z.boolean().optional().describe('Emit once then stop (default: false)'),
+          preprocess: z.number().optional().describe('Seconds to pre-simulate (default: 0)'),
+          speed_scale: z.number().optional().describe('Speed multiplier (default: 1.0)'),
+          explosiveness: z
+            .number()
+            .optional()
+            .describe('0=steady stream, 1=all at once (default: 0)'),
+          randomness: z.number().optional().describe('Randomness ratio (default: 0)'),
+        })
+        .optional()
+        .describe('Particle-specific properties. Used for: add_particles.'),
     }),
     execute: async (params: Record<string, unknown>): Promise<string> => {
       const action = params.action as string;
@@ -82,7 +114,9 @@ export const nodeTools: MCPTool[] = [
             if (!node_name) throw new Error('node_name is required for action "create"');
 
             const result = await godot.sendCommand<CommandResult>('create_node', {
-              parent_path, node_type, node_name,
+              parent_path,
+              node_type,
+              node_name,
             });
             return `Created ${node_type} node named "${node_name}" at ${result.node_path}`;
           }
@@ -103,7 +137,9 @@ export const nodeTools: MCPTool[] = [
             if (!property) throw new Error('property is required for action "update_property"');
 
             await godot.sendCommand<CommandResult>('update_node_property', {
-              node_path, property, value,
+              node_path,
+              property,
+              value,
             });
             return `Updated property "${property}" of node at ${node_path} to ${JSON.stringify(value)}`;
           }
@@ -112,7 +148,9 @@ export const nodeTools: MCPTool[] = [
             const node_path = params.node_path as string;
             if (!node_path) throw new Error('node_path is required for action "get_properties"');
 
-            const result = await godot.sendCommand<CommandResult>('get_node_properties', { node_path });
+            const result = await godot.sendCommand<CommandResult>('get_node_properties', {
+              node_path,
+            });
             const formattedProperties = Object.entries(result.properties)
               .map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
               .join('\n');
@@ -199,14 +237,17 @@ export const nodeTools: MCPTool[] = [
             const particle_type = params.particle_type as string;
             if (!parent_path) throw new Error('parent_path is required for action "add_particles"');
             if (!node_name) throw new Error('node_name is required for action "add_particles"');
-            if (!particle_type) throw new Error('particle_type is required for action "add_particles"');
+            if (!particle_type)
+              throw new Error('particle_type is required for action "add_particles"');
             if (particle_type !== 'GPUParticles2D' && particle_type !== 'GPUParticles3D') {
               throw new Error('particle_type must be "GPUParticles2D" or "GPUParticles3D"');
             }
 
             // Create the particle node
             const createResult = await godot.sendCommand<CommandResult>('create_node', {
-              parent_path, node_type: particle_type, node_name,
+              parent_path,
+              node_type: particle_type,
+              node_name,
             });
             const particlePath = createResult.node_path as string;
 
@@ -217,19 +258,26 @@ export const nodeTools: MCPTool[] = [
             if (props.lifetime !== undefined) propsToSet.push(['lifetime', props.lifetime]);
             if (props.one_shot !== undefined) propsToSet.push(['one_shot', props.one_shot]);
             if (props.preprocess !== undefined) propsToSet.push(['preprocess', props.preprocess]);
-            if (props.speed_scale !== undefined) propsToSet.push(['speed_scale', props.speed_scale]);
-            if (props.explosiveness !== undefined) propsToSet.push(['explosiveness_ratio', props.explosiveness]);
-            if (props.randomness !== undefined) propsToSet.push(['randomness_ratio', props.randomness]);
+            if (props.speed_scale !== undefined)
+              propsToSet.push(['speed_scale', props.speed_scale]);
+            if (props.explosiveness !== undefined)
+              propsToSet.push(['explosiveness_ratio', props.explosiveness]);
+            if (props.randomness !== undefined)
+              propsToSet.push(['randomness_ratio', props.randomness]);
 
             for (const [property, value] of propsToSet) {
               await godot.sendCommand<CommandResult>('update_node_property', {
-                node_path: particlePath, property, value,
+                node_path: particlePath,
+                property,
+                value,
               });
             }
 
             const setProps = propsToSet.map(([k]) => k).join(', ');
-            return `Created ${particle_type} "${node_name}" at ${particlePath}` +
-              (setProps ? ` with properties: ${setProps}` : '');
+            return (
+              `Created ${particle_type} "${node_name}" at ${particlePath}` +
+              (setProps ? ` with properties: ${setProps}` : '')
+            );
           }
 
           default:

@@ -1,46 +1,73 @@
 {
   "name": "@xianlee/godot-mcp",
-  "version": "0.2.2",
-  "description": "MCP server for Godot Engine — zero-config auto-detection, semantic search, visual diff UI, and full editor integration.",
+  "version": "0.3.0",
+  "description": "MCP server and Godot 4 editor plugin for inspecting, editing, running, and testing Godot projects.",
   "type": "module",
   "bin": {
     "godot-mcp": "./server/dist/index.js"
   },
   "files": [
     "server/dist",
-    "server/scripts",
-    "addons"
+    "addons",
+    "godot-mcp.config.example.json"
   ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "build": "cd server && npm run build",
+    "build": "tsc -p server/tsconfig.json && node server/scripts/build.js && node server/scripts/build-visualizer.js",
+    "typecheck": "tsc -p server/tsconfig.json --noEmit && tsc -p server/tsconfig.test.json --noEmit",
     "prepare": "npm run build",
     "start": "node server/dist/index.js",
+    "dev": "nodemon --watch server/src --ext ts,gd,html,css,js --exec \"npm run build && node server/dist/index.js\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "smoke": "node scripts/smoke-list-tools.mjs",
+    "test:e2e": "node scripts/e2e-godot.mjs",
     "inspector": "npx @modelcontextprotocol/inspector server/dist/index.js"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "@xenova/transformers": "^2.17.2",
-    "fastmcp": "^1.27.7",
+    "fastmcp": "^4.23.5",
     "sqlite-vec": "^0.1.7-alpha.2",
     "sqlite3": "^5.1.7",
-    "websocket": "^1.0.35",
-    "ws": "^8.13.0",
-    "zod": "^3.21.4"
+    "ws": "^8.18.3",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@types/node": "^20.11.24"
+    "@eslint/js": "^9.36.0",
+    "@types/node": "^22.18.0",
+    "@types/ws": "^8.18.1",
+    "esbuild": "^0.25.10",
+    "eslint": "^9.36.0",
+    "globals": "^14.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "nodemon": "^3.1.10",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.44.0",
+    "vitest": "^2.1.9"
   },
+  "author": "Shanley Clarence Lacanlale",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/6NineLives/godot-mcp.git"
+    "url": "git+https://github.com/sc-lacanlale/godot-mcp.git"
   },
+  "bugs": {
+    "url": "https://github.com/sc-lacanlale/godot-mcp/issues"
+  },
+  "homepage": "https://github.com/sc-lacanlale/godot-mcp#readme",
   "keywords": [
     "godot",
+    "godot4",
     "mcp",
-    "ai",
-    "claude",
-    "cline",
-    "fastmcp",
-    "game-engine"
+    "model-context-protocol",
+    "gamedev",
+    "typescript"
   ]
 }

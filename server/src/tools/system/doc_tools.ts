@@ -278,14 +278,13 @@ export const docTools: MCPTool[] = [
       action: z
         .enum(['search', 'get_file', 'get_class', 'get_best_practices', 'get_tree'])
         .describe('Which documentation action to perform'),
-      query: z
-        .string()
-        .optional()
-        .describe('Search query (for search). E.g. "Node2D", "signal"'),
+      query: z.string().optional().describe('Search query (for search). E.g. "Node2D", "signal"'),
       path: z
         .string()
         .optional()
-        .describe('Path to the file relative to docs root (for get_file). E.g. "classes/class_node.rst"'),
+        .describe(
+          'Path to the file relative to docs root (for get_file). E.g. "classes/class_node.rst"',
+        ),
       class_name: z
         .string()
         .optional()
@@ -293,14 +292,16 @@ export const docTools: MCPTool[] = [
       tree_path: z
         .string()
         .optional()
-        .describe('Relative path for getting doc folder tree. Leave empty for root. E.g "tutorials/2d"'),
+        .describe(
+          'Relative path for getting doc folder tree. Leave empty for root. E.g "tutorials/2d"',
+        ),
       topic: z
         .string()
         .optional()
         .describe(
           'Topic for best practices (for get_best_practices). ' +
-          'Available: "physics", "signals", "gdscript", "scene_organization", ' +
-          '"animation", "ui", "input", "performance"'
+            'Available: "physics", "signals", "gdscript", "scene_organization", ' +
+            '"animation", "ui", "input", "performance"',
         ),
     }),
     execute: async (params: Record<string, unknown>) => {
@@ -330,7 +331,7 @@ export const docTools: MCPTool[] = [
           }
 
           case 'get_best_practices': {
-            const topic = (params.topic as string ?? '').toLowerCase().replace(/[\s-]+/g, '_');
+            const topic = ((params.topic as string) ?? '').toLowerCase().replace(/[\s-]+/g, '_');
             if (!topic) throw new Error('topic is required for action "get_best_practices"');
 
             const practices = BEST_PRACTICES[topic];

@@ -3,7 +3,7 @@
  */
 
 // Project data injected at build time
-export const PROJECT_DATA = "%%PROJECT_DATA%%";
+export const PROJECT_DATA = '%%PROJECT_DATA%%';
 
 // Node dimensions
 export const NODE_W = 200;
@@ -50,8 +50,16 @@ export function setSearchTerm(value) {
 
 // Folder color mapping
 const FOLDER_COLORS = [
-  '#d4a27f', '#7aa2f7', '#a6e3a1', '#f38ba8', '#89dceb',
-  '#fab387', '#cba6f7', '#f9e2af', '#94e2d5', '#eba0ac'
+  '#d4a27f',
+  '#7aa2f7',
+  '#a6e3a1',
+  '#f38ba8',
+  '#89dceb',
+  '#fab387',
+  '#cba6f7',
+  '#f9e2af',
+  '#94e2d5',
+  '#eba0ac',
 ];
 
 const folderColorMap = {};
@@ -73,7 +81,7 @@ export const nodes = (PROJECT_DATA.nodes ?? []).map((n, i) => ({
   y: 0,
   color: getFolderColor(n.folder),
   highlighted: true,
-  visible: true
+  visible: true,
 }));
 
 export const edges = PROJECT_DATA.edges ?? [];
@@ -83,11 +91,11 @@ export let currentView = 'scripts';
 export let sceneData = null;
 
 // Scene view state
-export let expandedScene = null;        // The scene currently expanded (path)
+export let expandedScene = null; // The scene currently expanded (path)
 export let expandedSceneHierarchy = null; // Full hierarchy of expanded scene
-export let selectedSceneNode = null;    // Currently selected node in scene tree
-export let hoveredSceneNode = null;     // Node being hovered over
-export let sceneNodeProperties = null;  // Properties of selected scene node
+export let selectedSceneNode = null; // Currently selected node in scene tree
+export let hoveredSceneNode = null; // Node being hovered over
+export let sceneNodeProperties = null; // Properties of selected scene node
 
 // Scene positions (for scene cards in overview)
 export const scenePositions = {};
@@ -125,7 +133,7 @@ export function setSceneData(data) {
           }
           scriptToScenes[scriptPath].push({
             path: scene.path,
-            name: sceneName
+            name: sceneName,
           });
         }
       }
@@ -178,5 +186,8 @@ export function setCurrentUsages(value) {
 
 // Utility function
 export function esc(s) {
-  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }

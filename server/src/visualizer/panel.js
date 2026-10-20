@@ -3,10 +3,17 @@
  */
 
 import {
-  nodes, edges, selectedNode, setSelectedNode, esc,
-  selectedSceneNode, setSelectedSceneNode,
-  sceneNodeProperties, setSceneNodeProperties,
-  expandedScene, scriptToScenes
+  nodes,
+  edges,
+  selectedNode,
+  setSelectedNode,
+  esc,
+  selectedSceneNode,
+  setSelectedSceneNode,
+  sceneNodeProperties,
+  setSceneNodeProperties,
+  expandedScene,
+  scriptToScenes,
 } from './state.js';
 import { sendCommand } from './websocket.js';
 import { highlightGDScript } from './syntax.js';
@@ -23,7 +30,8 @@ export function initPanel() {
 export function openPanel(node) {
   setSelectedNode(node);
 
-  document.getElementById('panel-title').textContent = node.class_name || node.filename.replace('.gd', '');
+  document.getElementById('panel-title').textContent =
+    node.class_name || node.filename.replace('.gd', '');
   document.getElementById('panel-path').textContent = node.path;
 
   let html = '';
@@ -37,9 +45,10 @@ export function openPanel(node) {
   html += `<div class="meta-row">`;
   html += `<div class="meta-badge"><span>${node.line_count}</span> lines</div>`;
   html += `<div class="meta-badge">extends <span>${node.extends || 'Node'}</span></div>`;
-  if (node.class_name) html += `<div class="meta-badge">class <span>${esc(node.class_name)}</span></div>`;
+  if (node.class_name)
+    html += `<div class="meta-badge">class <span>${esc(node.class_name)}</span></div>`;
   html += `</div>`;
-  
+
   // Scene usage (if this script is used in scenes)
   const usedInScenes = scriptToScenes[node.path];
   if (usedInScenes && usedInScenes.length > 0) {
@@ -57,8 +66,8 @@ export function openPanel(node) {
   }
 
   // Variables - split into @export and regular
-  const exportVars = (node.variables || []).filter(v => v.exported);
-  const regularVars = (node.variables || []).filter(v => !v.exported);
+  const exportVars = (node.variables || []).filter((v) => v.exported);
+  const regularVars = (node.variables || []).filter((v) => !v.exported);
 
   // Exports section (always show for adding)
   html += `<div class="section">`;
@@ -125,7 +134,8 @@ export function openPanel(node) {
       html += `<li class="clickable" onclick="toggleFunc(${fi})">`;
       html += `<span class="kw">func</span> <span class="fn">${esc(f.name)}</span>`;
       html += `<span class="param">(${esc(f.params)})</span>`;
-      if (f.return_type) html += ` <span class="ret">&rarr;</span> <span class="tp">${esc(f.return_type)}</span>`;
+      if (f.return_type)
+        html += ` <span class="ret">&rarr;</span> <span class="tp">${esc(f.return_type)}</span>`;
       html += `<span style="margin-left:auto;display:flex;gap:4px;align-items:center">`;
       if (f.body_lines) html += `<span class="tag tag-lines">${f.body_lines}L</span>`;
       html += `<button class="delete" onclick="event.stopPropagation();showDeleteUsages(${fi}, false, 'function')" title="Delete function" style="opacity:0">×</button>`;
@@ -163,7 +173,7 @@ export function openPanel(node) {
   html += `</div>`;
 
   // Connections - group by target and show signal names
-  const related = edges.filter(e => e.from === node.path || e.to === node.path);
+  const related = edges.filter((e) => e.from === node.path || e.to === node.path);
   if (related.length > 0) {
     // Group connections by target and type
     const connGroups = {};
@@ -184,7 +194,12 @@ export function openPanel(node) {
     for (const key of Object.keys(connGroups)) {
       const g = connGroups[key];
       const dirIcon = g.dir === 'out' ? '→' : '←';
-      const color = g.type === 'extends' ? 'var(--edge-extends)' : g.type === 'preload' ? 'var(--edge-preload)' : 'var(--edge-signal)';
+      const color =
+        g.type === 'extends'
+          ? 'var(--edge-extends)'
+          : g.type === 'preload'
+            ? 'var(--edge-preload)'
+            : 'var(--edge-signal)';
       const filename = g.other.split('/').pop();
 
       html += `<li style="flex-wrap:wrap">`;
@@ -194,7 +209,7 @@ export function openPanel(node) {
       if (g.type === 'signal' && g.signals.length > 0) {
         const uniqueSignals = [...new Set(g.signals)];
         html += `<div style="width:100%;margin-top:4px;padding-left:20px;font-size:11px;color:var(--text-muted)">`;
-        html += uniqueSignals.map(s => `<span class="sig">${esc(s)}</span>`).join(', ');
+        html += uniqueSignals.map((s) => `<span class="sig">${esc(s)}</span>`).join(', ');
         html += `</div>`;
       }
       html += `</li>`;
@@ -332,9 +347,12 @@ function updateHighlight(fi) {
 
   // Highlight each line, wrap in spans for line-level highlighting
   const lines = textarea.value.split('\n');
-  highlight.innerHTML = lines.map((line, i) =>
-    `<div class="code-line" data-line="${i}">${highlightGDScript(line) || ' '}</div>`
-  ).join('');
+  highlight.innerHTML = lines
+    .map(
+      (line, i) =>
+        `<div class="code-line" data-line="${i}">${highlightGDScript(line) || ' '}</div>`,
+    )
+    .join('');
 }
 
 // Save function changes back to Godot
@@ -357,7 +375,7 @@ window.saveFunction = async function (fi) {
     await sendCommand('modify_function', {
       path: scriptPath,
       name: funcName,
-      body: newCode
+      body: newCode,
     });
 
     // Update local state
@@ -383,7 +401,7 @@ window.saveFunction = async function (fi) {
 // ---- Inline Editing for Variables/Signals ----
 function initInlineEditing() {
   // Handle blur on editable fields - save changes
-  document.querySelectorAll('.editable').forEach(el => {
+  document.querySelectorAll('.editable').forEach((el) => {
     el.addEventListener('blur', handleInlineEdit);
     el.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
@@ -423,7 +441,7 @@ async function handleInlineEdit(e) {
 
       const newSig = {
         name: field === 'name' ? newValue : oldName,
-        params: field === 'params' ? newValue : oldParams
+        params: field === 'params' ? newValue : oldParams,
       };
 
       // Send to Godot
@@ -432,7 +450,7 @@ async function handleInlineEdit(e) {
         action: 'update',
         old_name: oldName,
         name: newSig.name,
-        params: newSig.params
+        params: newSig.params,
       });
 
       // Update local state
@@ -440,9 +458,9 @@ async function handleInlineEdit(e) {
       console.log(`Updated signal in ${selectedNode.path}:`, newSig);
     } else {
       // Update variable
-      const vars = selectedNode.variables.filter(v => v.exported === isExport);
+      const vars = selectedNode.variables.filter((v) => v.exported === isExport);
       const v = vars[index];
-      const actualIndex = selectedNode.variables.findIndex(vr => vr.name === v.name);
+      const actualIndex = selectedNode.variables.findIndex((vr) => vr.name === v.name);
 
       if (actualIndex !== -1) {
         const newVar = { ...selectedNode.variables[actualIndex] };
@@ -458,7 +476,7 @@ async function handleInlineEdit(e) {
           name: newVar.name,
           type: newVar.type,
           default: newVar.default,
-          exported: isExport
+          exported: isExport,
         });
 
         // Update local state
@@ -479,9 +497,9 @@ async function handleInlineEdit(e) {
 
 // ---- Toggle @onready ----
 window.toggleOnready = async function (index, isExport) {
-  const vars = selectedNode.variables.filter(v => v.exported === isExport);
+  const vars = selectedNode.variables.filter((v) => v.exported === isExport);
   const v = vars[index];
-  const actualIndex = selectedNode.variables.findIndex(vr => vr.name === v.name);
+  const actualIndex = selectedNode.variables.findIndex((vr) => vr.name === v.name);
 
   if (actualIndex === -1) return;
 
@@ -496,7 +514,7 @@ window.toggleOnready = async function (index, isExport) {
       type: v.type || '',
       default: v.default || '',
       exported: isExport,
-      onready: newOnready
+      onready: newOnready,
     });
 
     selectedNode.variables[actualIndex].onready = newOnready;
@@ -519,7 +537,7 @@ window.addNewVariable = async function (isExport) {
       name: newVar.name,
       type: newVar.type,
       default: newVar.default,
-      exported: isExport
+      exported: isExport,
     });
 
     // Update local state
@@ -554,7 +572,7 @@ window.addNewSignal = async function () {
       path: selectedNode.path,
       action: 'add',
       name: newSig.name,
-      params: newSig.params
+      params: newSig.params,
     });
 
     // Update local state
@@ -586,12 +604,12 @@ let resizeStartY = 0;
 let resizeStartHeight = 0;
 
 function initSectionResizing() {
-  document.querySelectorAll('.section-resize-handle').forEach(handle => {
+  document.querySelectorAll('.section-resize-handle').forEach((handle) => {
     // Remove old listeners
     handle.replaceWith(handle.cloneNode(true));
   });
 
-  document.querySelectorAll('.section-resize-handle').forEach(handle => {
+  document.querySelectorAll('.section-resize-handle').forEach((handle) => {
     handle.addEventListener('mousedown', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -672,7 +690,7 @@ export function expandAndHighlightFunction(funcName, targetLine, nodeData) {
   const node = nodeData || selectedNode;
 
   // Find the function index
-  const funcIndex = node.functions.findIndex(f => f.name === funcName);
+  const funcIndex = node.functions.findIndex((f) => f.name === funcName);
   if (funcIndex === -1) {
     console.log('Function not found:', funcName);
     return;
@@ -696,17 +714,20 @@ export function expandAndHighlightFunction(funcName, targetLine, nodeData) {
   }
 
   // Wait for expansion, then highlight
-  setTimeout(() => {
-    highlightLineInViewer(viewer, funcName, targetLine, node);
-    // Scroll the viewer into view
-    viewer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, isExpanded ? 100 : 300);
+  setTimeout(
+    () => {
+      highlightLineInViewer(viewer, funcName, targetLine, node);
+      // Scroll the viewer into view
+      viewer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    },
+    isExpanded ? 100 : 300,
+  );
 }
 
 function highlightLineInViewer(viewer, funcName, targetLine, nodeData) {
   // Find the function to get its start line
   const node = nodeData || selectedNode;
-  const func = node.functions.find(f => f.name === funcName);
+  const func = node.functions.find((f) => f.name === funcName);
   if (!func) {
     console.log('Function not found for highlighting:', funcName);
     return;
@@ -715,7 +736,9 @@ function highlightLineInViewer(viewer, funcName, targetLine, nodeData) {
   const funcStartLine = func.line || 1;
   const relativeLineIndex = targetLine - funcStartLine;
 
-  console.log(`Highlighting line ${targetLine} in ${funcName} (start: ${funcStartLine}, relative: ${relativeLineIndex})`);
+  console.log(
+    `Highlighting line ${targetLine} in ${funcName} (start: ${funcStartLine}, relative: ${relativeLineIndex})`,
+  );
 
   // Find the highlight overlay within the viewer
   const highlightDiv = viewer.querySelector('.code-editor-highlight');
@@ -725,7 +748,7 @@ function highlightLineInViewer(viewer, funcName, targetLine, nodeData) {
   }
 
   // Clear all previous highlights
-  document.querySelectorAll('.code-line-highlight').forEach(el => {
+  document.querySelectorAll('.code-line-highlight').forEach((el) => {
     el.classList.remove('code-line-highlight');
   });
 
@@ -757,25 +780,28 @@ export async function openSceneNodePanel(scenePath, node) {
   // Show loading state
   document.getElementById('panel-title').textContent = node.name;
   document.getElementById('panel-path').textContent = `${node.type} • ${node.path}`;
-  document.getElementById('panel-body').innerHTML = '<div class="loading-state">Loading properties...</div>';
+  document.getElementById('panel-body').innerHTML =
+    '<div class="loading-state">Loading properties...</div>';
   detailPanel.classList.add('open');
 
   try {
     // Fetch properties from Godot
     const result = await sendCommand('get_scene_node_properties', {
       scene_path: scenePath,
-      node_path: node.path
+      node_path: node.path,
     });
 
     if (result.ok) {
       setSceneNodeProperties(result);
       renderSceneNodePanel(result, scenePath, node);
     } else {
-      document.getElementById('panel-body').innerHTML = `<div class="error-state">Failed to load properties: ${result.error}</div>`;
+      document.getElementById('panel-body').innerHTML =
+        `<div class="error-state">Failed to load properties: ${result.error}</div>`;
     }
   } catch (err) {
     console.error('Failed to fetch node properties:', err);
-    document.getElementById('panel-body').innerHTML = `<div class="error-state">Error: ${err.message}</div>`;
+    document.getElementById('panel-body').innerHTML =
+      `<div class="error-state">Error: ${err.message}</div>`;
   }
 }
 
@@ -831,9 +857,7 @@ function renderSceneNodePanel(data, scenePath, node) {
 
 // Convert snake_case to Title Case for display
 function formatPropertyName(name) {
-  return name
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, c => c.toUpperCase());
+  return name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function renderPropertyRow(prop, scenePath, nodePath) {
@@ -855,9 +879,11 @@ function renderPropertyRow(prop, scenePath, nodePath) {
       break;
 
     case 2: // TYPE_INT
-      if (hint === 2 && hint_string) { // PROPERTY_HINT_ENUM
+      if (hint === 2 && hint_string) {
+        // PROPERTY_HINT_ENUM
         html += renderEnumSelect(name, type, value, hint_string);
-      } else if (hint === 1 && hint_string) { // PROPERTY_HINT_RANGE
+      } else if (hint === 1 && hint_string) {
+        // PROPERTY_HINT_RANGE
         html += renderRangeSlider(name, type, value, hint_string, true);
       } else {
         html += `<input type="number" class="property-input" value="${value ?? 0}" step="1" data-prop="${esc(name)}" data-type="${type}">`;
@@ -865,7 +891,8 @@ function renderPropertyRow(prop, scenePath, nodePath) {
       break;
 
     case 3: // TYPE_FLOAT
-      if (hint === 1 && hint_string) { // PROPERTY_HINT_RANGE
+      if (hint === 1 && hint_string) {
+        // PROPERTY_HINT_RANGE
         html += renderRangeSlider(name, type, value, hint_string, false);
       } else {
         html += `<input type="number" class="property-input" value="${value ?? 0}" step="0.01" data-prop="${esc(name)}" data-type="${type}">`;
@@ -906,7 +933,8 @@ function renderPropertyRow(prop, scenePath, nodePath) {
 
     default:
       // Display value as text for unsupported types
-      const displayValue = typeof value === 'object' ? JSON.stringify(value) : String(value ?? 'null');
+      const displayValue =
+        typeof value === 'object' ? JSON.stringify(value) : String(value ?? 'null');
       html += `<span class="property-readonly">${esc(displayValue.substring(0, 50))}${displayValue.length > 50 ? '...' : ''}</span>`;
   }
 
@@ -915,9 +943,12 @@ function renderPropertyRow(prop, scenePath, nodePath) {
 }
 
 function renderEnumSelect(name, type, value, hintString) {
-  const options = hintString.split(',').map(opt => {
+  const options = hintString.split(',').map((opt) => {
     const parts = opt.split(':');
-    return { value: parts.length > 1 ? parseInt(parts[0]) : opt.trim(), label: parts.length > 1 ? parts[1].trim() : opt.trim() };
+    return {
+      value: parts.length > 1 ? parseInt(parts[0]) : opt.trim(),
+      label: parts.length > 1 ? parts[1].trim() : opt.trim(),
+    };
   });
 
   let html = `<select class="property-select" data-prop="${esc(name)}" data-type="${type}">`;
@@ -933,7 +964,7 @@ function renderRangeSlider(name, type, value, hintString, isInt) {
   const parts = hintString.split(',');
   const min = parseFloat(parts[0]) || 0;
   const max = parseFloat(parts[1]) || 100;
-  const step = parts[2] ? parseFloat(parts[2]) : (isInt ? 1 : 0.01);
+  const step = parts[2] ? parseFloat(parts[2]) : isInt ? 1 : 0.01;
 
   return `<div class="range-input-group">
     <input type="range" class="property-range" value="${value ?? min}" min="${min}" max="${max}" step="${step}" data-prop="${esc(name)}" data-type="${type}">
@@ -980,7 +1011,7 @@ function renderColorInput(name, type, value) {
 
 function initPropertyEditing(scenePath, nodePath) {
   // Boolean toggles
-  document.querySelectorAll('.property-row input[type="checkbox"]').forEach(el => {
+  document.querySelectorAll('.property-row input[type="checkbox"]').forEach((el) => {
     el.addEventListener('change', () => {
       const propName = el.dataset.prop;
       const value = el.checked;
@@ -989,18 +1020,22 @@ function initPropertyEditing(scenePath, nodePath) {
   });
 
   // Number and text inputs
-  document.querySelectorAll('.property-row input.property-input:not(.vec-x):not(.vec-y):not(.vec-z):not(.color-alpha):not(.range-number)').forEach(el => {
-    el.addEventListener('change', () => {
-      const propName = el.dataset.prop;
-      const type = parseInt(el.dataset.type);
-      let value = el.value;
-      if (type === 2 || type === 3) value = parseFloat(value);
-      saveSceneNodeProperty(scenePath, nodePath, propName, value, type);
+  document
+    .querySelectorAll(
+      '.property-row input.property-input:not(.vec-x):not(.vec-y):not(.vec-z):not(.color-alpha):not(.range-number)',
+    )
+    .forEach((el) => {
+      el.addEventListener('change', () => {
+        const propName = el.dataset.prop;
+        const type = parseInt(el.dataset.type);
+        let value = el.value;
+        if (type === 2 || type === 3) value = parseFloat(value);
+        saveSceneNodeProperty(scenePath, nodePath, propName, value, type);
+      });
     });
-  });
 
   // Select dropdowns
-  document.querySelectorAll('.property-row select.property-select').forEach(el => {
+  document.querySelectorAll('.property-row select.property-select').forEach((el) => {
     el.addEventListener('change', () => {
       const propName = el.dataset.prop;
       const type = parseInt(el.dataset.type);
@@ -1009,7 +1044,7 @@ function initPropertyEditing(scenePath, nodePath) {
   });
 
   // Range sliders (sync with number input)
-  document.querySelectorAll('.range-input-group').forEach(group => {
+  document.querySelectorAll('.range-input-group').forEach((group) => {
     const range = group.querySelector('input[type="range"]');
     const number = group.querySelector('input[type="number"]');
 
@@ -1030,12 +1065,12 @@ function initPropertyEditing(scenePath, nodePath) {
   });
 
   // Vector inputs
-  document.querySelectorAll('.vector-input-group').forEach(group => {
+  document.querySelectorAll('.vector-input-group').forEach((group) => {
     const propName = group.dataset.prop;
     const type = parseInt(group.dataset.type);
     const inputs = group.querySelectorAll('input');
 
-    inputs.forEach(input => {
+    inputs.forEach((input) => {
       input.addEventListener('change', () => {
         const x = parseFloat(group.querySelector('.vec-x').value);
         const y = parseFloat(group.querySelector('.vec-y').value);
@@ -1047,7 +1082,7 @@ function initPropertyEditing(scenePath, nodePath) {
   });
 
   // Color inputs
-  document.querySelectorAll('.color-input-group').forEach(group => {
+  document.querySelectorAll('.color-input-group').forEach((group) => {
     const propName = group.dataset.prop;
     const type = parseInt(group.dataset.type);
     const colorInput = group.querySelector('input[type="color"]');
@@ -1076,7 +1111,7 @@ async function saveSceneNodeProperty(scenePath, nodePath, propName, value, value
       node_path: nodePath,
       property_name: propName,
       value: value,
-      value_type: valueType
+      value_type: valueType,
     });
 
     if (result.ok) {
@@ -1092,24 +1127,24 @@ async function saveSceneNodeProperty(scenePath, nodePath, propName, value, value
 }
 
 // Toggle property section visibility
-window.togglePropertySection = function(header) {
+window.togglePropertySection = function (header) {
   const section = header.closest('.property-section');
   section.classList.toggle('collapsed');
 };
 
 // Jump to script in scripts view
-window.jumpToScript = function(scriptPath) {
+window.jumpToScript = function (scriptPath) {
   // Switch to scripts view and select the script
   window.switchView('scripts');
   // Find and select the node
-  const scriptNode = nodes.find(n => n.path === scriptPath);
+  const scriptNode = nodes.find((n) => n.path === scriptPath);
   if (scriptNode) {
     setTimeout(() => openPanel(scriptNode), 100);
   }
 };
 
 // Jump to scene in scenes view
-window.jumpToScene = function(scenePath) {
+window.jumpToScene = function (scenePath) {
   // Switch to scenes view and expand the scene
   closePanel();
   window.switchView('scenes');

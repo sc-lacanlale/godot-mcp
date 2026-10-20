@@ -11,7 +11,6 @@ config_version=5
 [application]
 
 config/name="Godot MCP"
-run/main_scene="uid://cj6x3fv3tu00f"
 config/features=PackedStringArray("4.4", "GL Compatibility")
 config/icon="res://icon.svg"
 

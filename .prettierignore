@@ -1,0 +1,12 @@
+node_modules
+server/dist
+coverage
+package-lock.json
+.godot
+*.gd
+*.uid
+*.import
+*.tscn
+project.godot
+icon.svg
+icon.svg.import

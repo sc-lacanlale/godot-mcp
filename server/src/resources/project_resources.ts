@@ -1,11 +1,11 @@
-import { Resource } from 'fastmcp';
+import type { FastMCPSessionAuth, Resource } from 'fastmcp';
 import { getGodotConnection } from '../utils/godot_connection.js';
 import { logError } from '../utils/logger.js';
 
 /**
  * Resource that provides information about the Godot project structure
  */
-export const projectStructureResource: Resource = {
+export const projectStructureResource: Resource<FastMCPSessionAuth> = {
   uri: 'godot/project/structure',
   name: 'Godot Project Structure',
   mimeType: 'application/json',
@@ -25,7 +25,7 @@ export const projectStructureResource: Resource = {
 /**
  * Resource that provides project settings
  */
-export const projectSettingsResource: Resource = {
+export const projectSettingsResource: Resource<FastMCPSessionAuth> = {
   uri: 'godot/project/settings',
   name: 'Godot Project Settings',
   mimeType: 'application/json',
@@ -45,7 +45,7 @@ export const projectSettingsResource: Resource = {
 /**
  * Resource that provides a list of all project resources
  */
-export const projectResourcesResource: Resource = {
+export const projectResourcesResource: Resource<FastMCPSessionAuth> = {
   uri: 'godot/project/resources',
   name: 'Godot Project Resources',
   mimeType: 'application/json',

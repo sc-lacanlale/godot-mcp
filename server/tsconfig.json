@@ -14,13 +14,6 @@
     "resolveJsonModule": true,
     "allowJs": true
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "**/*.test.ts",
-    "**/__tests__/**",
-    "src/visualizer/**"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "**/*.test.ts", "src/visualizer/**"]
 }

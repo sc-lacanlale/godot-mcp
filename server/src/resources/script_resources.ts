@@ -1,11 +1,11 @@
-import { Resource } from 'fastmcp';
+import type { FastMCPSessionAuth, Resource } from 'fastmcp';
 import { getGodotConnection } from '../utils/godot_connection.js';
 import { logError } from '../utils/logger.js';
 
 /**
  * Resource that provides a list of all scripts in the project
  */
-export const scriptListResource: Resource = {
+export const scriptListResource: Resource<FastMCPSessionAuth> = {
   uri: 'godot/scripts',
   name: 'Godot Script List',
   mimeType: 'application/json',

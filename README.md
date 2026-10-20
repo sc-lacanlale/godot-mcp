@@ -1,24 +1,66 @@
-# Godot MCP (Model Context Protocol)
+# godot-mcp
 
-## Project Overview
-Godot MCP provides a comprehensive, production-ready integration between Large Language Models (LLMs) and the Godot Engine (versions 4.x). It creates a unified Model Context Protocol interface allowing AI assistants to intelligently read, write, and manipulate Godot project files, interact with the live Godot Editor, and perform End-to-End (E2E) testing on running games. By consolidating multiple AI-to-Godot features into a single robust toolkit, Godot MCP dramatically lowers the friction of AI-assisted game development.
+[![CI](https://github.com/sc-lacanlale/godot-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/sc-lacanlale/godot-mcp/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@xianlee/godot-mcp)](https://www.npmjs.com/package/@xianlee/godot-mcp)
 
-## Installation & Usage
+MCP server and Godot 4 editor plugin. An MCP client talks to a Node process over stdio. That process edits a project through a WebSocket plugin inside the Godot editor, and it can also talk to a bridge script inside a running game.
 
-### 1. Prerequisites
-- Node.js (v18 or higher)
-- Godot Engine 4.x
-- Supported MCP client (e.g., Claude Desktop)
+Published on npm as [`@xianlee/godot-mcp`](https://www.npmjs.com/package/@xianlee/godot-mcp).
 
-### 2. Add the Godot Plugin
-Navigate to your specific Godot project's root folder in your terminal and run:
+## Demo
+
+Godot 4.7.2 after `scripts/e2e-godot.mjs` created `scenes/main.tscn`. The scene root is a Node2D named `main`. `Player` has `scripts/player.gd` attached, and `Sprite` is a Sprite2D.
+
+![Godot editor showing the scene created through godot-mcp](docs/editor-demo.png)
+
+## Architecture
+
+```mermaid
+flowchart LR
+  Client[MCP client] -->|stdio| Server["Node server, server/src"]
+  Server -->|WebSocket 9080| Plugin["Editor plugin, addons/godot_mcp"]
+  Plugin --> Editor[Godot editor]
+  Server -->|WebSocket 9081| Bridge[test_bridge.gd]
+  Bridge --> Game[Running game]
+```
+
+Headless operations (creating a scene file, reading the project) run `godot --headless --script` against `server/src/scripts/godot_operations.gd` and do not need the editor. Live node edits need the plugin. Input and scene queries against a playing game need `test_bridge.gd` installed as an autoload named `TestBridge`.
+
+## Requirements
+
+- Node.js 20 or newer. FastMCP 4 depends on packages that declare this.
+- Godot 4.3 or newer on `PATH`, or `GODOT_PATH` pointing at the executable. The editor plugin and the headless script were loaded with Godot 4.7.2.
+- An MCP client that speaks stdio. Claude Desktop and Cursor are the two configs below.
+
+## Install the editor plugin
+
+From the root of a Godot project:
+
 ```bash
 npx -y @xianlee/godot-mcp install
 ```
-This will automatically copy the `addons/godot_mcp` folder into your project. Enable the `godot_mcp` plugin via **Project > Project Settings > Plugins** in the Godot Editor.
 
-### 3. Configure the MCP Client (Claude Desktop Example)
-Add the following configuration to your `mcp config json`:
+That copies `addons/godot_mcp` into the project. In Godot, open **Project > Project Settings > Plugins** and enable **Godot MCP**. The plugin listens on port 9080, then 9081 through 9084 if 9080 is taken.
+
+Optional config file, copied from [`godot-mcp.config.example.json`](godot-mcp.config.example.json) to `godot-mcp.config.json` next to the project or in the directory you launch the server from:
+
+```json
+{
+  "godotPath": "/absolute/path/to/godot",
+  "godotProjectPath": "/absolute/path/to/the/godot/project"
+}
+```
+
+The same values can be set as `GODOT_PATH` and `GODOT_PROJECT_PATH`.
+
+## Claude Desktop
+
+Edit the Claude Desktop config:
+
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+- Linux: `~/.config/Claude/claude_desktop_config.json`
+
 ```json
 {
   "mcpServers": {
@@ -26,74 +68,93 @@ Add the following configuration to your `mcp config json`:
       "command": "npx",
       "args": ["-y", "@xianlee/godot-mcp"],
       "env": {
-        "GODOT_PATH": "<OPTIONAL_ABSOLUTE_PATH_TO_GODOT_EXECUTABLE>"
+        "GODOT_PATH": "/absolute/path/to/godot",
+        "GODOT_PROJECT_PATH": "/absolute/path/to/the/godot/project"
       }
     }
   }
 }
 ```
 
-### 4. Running the Complete Toolchain
-1. Ensure your Godot editor is open with the `godot_mcp` plugin enabled.
-2. Start your MCP Client (like Claude Desktop). The server will download on-the-fly and seamlessly jump into the Godot WebSocket.
+Restart Claude Desktop. Open the Godot project with the plugin enabled before asking for live editor edits.
 
-## Feature List
+## Cursor
 
-*   **Live Editor Manipulation**: Modify nodes, properties, and scenes in real-time within the Godot Editor.
-*   **Deep Project Context**: Read and analyze scripts, scene structures (`.tscn`), and project files dynamically.
-*   **Version-Aware Godot Docs**: Automatically query Godot documentation matching your specific engine version.
-*   **End-to-End Game Bridge testing**: Play, test, and assert logic in live running games via simulated inputs and state queries.
-*   **Advanced Diagnostics**: View diagnostics, validate scenes, and debug live errors automatically.
-*   **Consolidated Architecture**: Minimal tool footprint heavily utilizing `action` parameters to conserve AI context windows.
-*   **Auto-Screenshot Loop**: Periodically captures visual screenshots of the editor or running game state to provide AI with continuous visual context.
-*   **Bug Fix Loop**: Automatically collects stack traces from the Godot engine, analyzes runtime errors, and iteratively proposes code fixes.
-*   **Scene Tree Viewer**: Interactive web-based visualizer for inspecting the live Godot scene tree and node properties via a browser.
-*   **Intelligent Path Detection**: Seamlessly detects correct Godot project paths and environment variables, even when loaded via external IDEs.
-*   **Robust Connection Handling**: Enterprise-grade WebSocket connections featuring command queuing, exponential backoff, and large payload buffering.
-*   **Universal Asset Resolution**: Resolves internal Godot UUIDs (`uid://...` or `.uid` files) dynamically to absolute file paths, ensuring seamless AI context mapping.
+Put the same `mcpServers` object in `~/.cursor/mcp.json`, or in `.cursor/mcp.json` inside the Godot project. Restart Cursor, or reload MCP servers from the MCP settings page.
 
-## MCP Tools Reference
+## Tools
 
-| Tool Name | Description | Key Parameters |
-| :--- | :--- | :--- |
-| `manage_project` | Project-level operations | `action` (info, tree, stats), `directory` |
-| `manage_project_config` | Modify project.godot or export settings | `action` (read, write), `section`, `key`, `value` |
-| `manage_asset` | Resolve or inspect asset paths and UUIDs | `action` (resolve, get_uid), `file_path`, `uid` |
-| `manage_script` | Create, read, update, or analyze GDScripts | `action` (create, read, edit), `file_path`, `content` |
-| `manage_scene` | Scene-level operations | `action` (open, save, run, structure), `scene_path` |
-| `manage_node` | Node-level edits within the live editor | `action` (create, delete, update, get), `node_path`, `properties` |
-| `manage_physics` | Inspect or edit physics shapes and layers | `action` (get_layer, set_layer), `node_path` |
-| `manage_animation` | Control AnimationPlayers in the editor | `action` (get_list, play, stop), `node_path`, `anim_name` |
-| `manage_ui` | Inspect or modify Control nodes | `action` (get_theme, set_anchors), `node_path` |
-| `manage_audio` | Audit or manipulate audio streams | `action` (get_buses, set_volume), `bus_name` |
-| `manage_signal` | Connect or disconnect Godot signals | `action` (connect, disconnect), `source_node`, `signal_name`, `target_node`, `method_name` |
-| `manage_game_bridge` | Connect to or configure a live running game | `action` (status, reset, ping) |
-| `game_scene` | Get node trees from the running game | `action` (get_tree, get_node), `node_path` |
-| `game_input` | Simulate input events in the running game | `action` (press, release, mouse_move), `input_name` |
-| `game_state` | Query properties and execution state | `action` (get_property, call_method), `node_path`, `property` |
-| `game_wait` | Pause execution to wait for visual updates | `action` (wait_frames, wait_seconds), `amount` |
-| `godot_docs` | Query Godot Engine documentation | `action` (search, get_class), `query` |
-| `execute_editor_script` | Run arbitrary GDScript within the editor | `script_code` |
-| `visualize_project` | Launch the web-based project visualizer | `port` |
-| `capture_vision` | Capture screenshots of the editor (if supported) | `format`, `quality` |
-| `inspect_project` | Deep-scan relations and usages | `action` (find_usage), `target` |
-| `debug_project` | Fetch logs and stack traces | `action` (get_errors, clear_logs) |
-| `validate_scene` | Check for broken dependencies | `scene_path` |
-| `run_and_verify` | Workflow tool to execute and assert correctness | `scene_path`, `assertions` |
-| `get_project_diagnostics` | Aggregate warnings across the ecosystem | `include_warnings` |
-| `search_project` | Full-text or regex search across scripts | `query`, `use_regex`, `file_pattern` |
-| `semantic_search` | Search code by semantic meaning | `query`, `threshold` |
-| `get_project_assets` | Get a comprehensive list of assets | `resource_type` |
-| `get_project_context` | Retrieve summarized current working context | `depth` |
+| Tool                      | What it does                                                                                            |
+| ------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `manage_project`          | Launch the editor, run the project, stop it, list projects, read project info. Headless.                |
+| `manage_project_config`   | Read and write `project.godot` settings and the input map.                                              |
+| `manage_asset`            | Load a sprite texture, export a `MeshLibrary`, read or update UIDs.                                     |
+| `manage_script`           | Create, read, edit, and attach GDScript files.                                                          |
+| `manage_scene`            | Create, open, save, and inspect scenes and resources.                                                   |
+| `manage_node`             | Create, delete, duplicate, list, and edit nodes in the open scene.                                      |
+| `manage_physics`          | Add bodies, shapes, layers, and areas.                                                                  |
+| `manage_animation`        | Add an `AnimationPlayer` and keyframes.                                                                 |
+| `manage_ui`               | Add `Control` nodes, theme overrides, and layout containers.                                            |
+| `manage_audio`            | Read and edit audio buses.                                                                              |
+| `manage_signal`           | List, connect, and disconnect signals.                                                                  |
+| `execute_editor_script`   | Run a GDScript snippet inside the editor.                                                               |
+| `godot_docs`              | Search documentation files, read a class page, or fetch a bundled best-practice note.                   |
+| `capture_vision`          | Capture the editor viewport, a scene preview, or a running game.                                        |
+| `inspect_project`         | Read the input map, collision layers, class properties, and the editor console.                         |
+| `visualize_project`       | Map scripts or scenes and open a local page with the result.                                            |
+| `debug_project`           | Run a scene and collect structured errors.                                                              |
+| `validate_scene`          | Check a `.tscn` or `.tres` file, and optionally rewrite fixable issues.                                 |
+| `run_and_verify`          | Run the project and return a structured error report.                                                   |
+| `get_project_diagnostics` | Check scripts in the project without launching a game.                                                  |
+| `search_project`          | Find files by name or pattern, or read a file.                                                          |
+| `semantic_search`         | Embed project scripts with `Xenova/all-MiniLM-L6-v2` and search them. The model downloads on first use. |
+| `get_project_assets`      | List scenes, scripts, textures, audio, and resources.                                                   |
+| `get_project_context`     | Summarize a scene file: nodes, instances, and UI.                                                       |
+| `manage_game_bridge`      | Install, connect, disconnect, or ping `test_bridge.gd`.                                                 |
+| `game_scene`              | Read the scene tree of the running game.                                                                |
+| `game_input`              | Send key, mouse, and text input to the running game.                                                    |
+| `game_state`              | Read an autoload, evaluate an expression, or read performance and viewport info.                        |
+| `game_wait`               | Wait until a node exists, a property matches, a signal fires, or an expression is true.                 |
+
+`READ_ONLY_MODE=true` omits tools registered as writers. The server also exposes four prompts (`godot_expert`, `debug_godot_project`, `create_game_feature`, `create_game_level`) and resources under the `godot/` URI scheme for scenes, scripts, project files, and editor state.
+
+## Development
+
+```bash
+git clone https://github.com/sc-lacanlale/godot-mcp.git
+cd godot-mcp
+npm install
+npm test
+npm run build
+npm start
+```
+
+`npm install` builds `server/dist` through the `prepare` script. `npm start` is the same process `npx @xianlee/godot-mcp` runs. Logs go to stderr. stdout is reserved for MCP JSON-RPC.
+
+| Script                 | Purpose                                                     |
+| ---------------------- | ----------------------------------------------------------- |
+| `npm test`             | Vitest unit tests                                           |
+| `npm run typecheck`    | `tsc` on the server and the tests                           |
+| `npm run lint`         | ESLint                                                      |
+| `npm run format:check` | Prettier                                                    |
+| `npm run smoke`        | Start the built server and call `tools/list`                |
+| `npm run test:e2e`     | Editor integration test. Exits 0 if Godot is not installed. |
+
+The unit tests cover the parameter normalizer, path checks and project detection, the Godot output parser, the tool registry, and the 4.4 version check. They do not launch Godot. `npm run test:e2e` does: it creates a temporary project, enables the addon, starts the editor, and calls the tools. Set `GODOT_PATH` to the executable. Without `GODOT_PATH` or a `godot` binary on `PATH`, the script prints a skip line and exits 0. `GODOT_E2E_HEADLESS=1` starts the editor with `--headless`.
+
+## CI and npm
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs install, typecheck, lint, format check, tests, build, and the tools-list smoke test on Node.js 20 and 22. A separate job downloads Godot 4.7.2 and runs `npm run test:e2e` under Xvfb.
+
+[`.github/workflows/release.yml`](.github/workflows/release.yml) publishes to npm when a tag `v*` is pushed and the tag matches `package.json` `version`. The workflow reads `NPM_TOKEN`. That secret is not in the repository. Add an npm automation token as the Actions secret `NPM_TOKEN` before pushing a release tag. The package name stays `@xianlee/godot-mcp`.
 
 ## Acknowledgements
 
-This project builds upon the foundational work of several existing Model Context Protocol (MCP) implementations for the Godot Engine. We would like to express our gratitude to the original maintainers and communities behind these repositories:
+- [Coding-Solo/godot-mcp](https://github.com/Coding-Solo/godot-mcp) by Solomon Elias. `server/src/scripts/godot_operations.gd` is derived from that project. MIT, copyright 2025 Solomon Elias.
+- [ee0pdt/godot-mcp](https://github.com/ee0pdt/godot-mcp). `addons/godot_mcp` is derived from that project. MIT, copyright line as published: "Copyright (c) 2025".
 
-*   **godot-mcp-plugin**: ([tomyud1/godot-mcp](https://github.com/tomyud1/godot-mcp))
-*   **godot-mcp-scene**: ([Derfirm/godot-mcp](https://github.com/Derfirm/godot-mcp))
-*   **godot-mcp-docs**: ([Nihilantropy/godot-mcp-docs](https://github.com/Nihilantropy/godot-mcp-docs))
-*   **godot-mcp-solo**: ([Coding-Solo/godot-mcp](https://github.com/Coding-Solo/godot-mcp))
-*   **godot_mcp_uid**: ([bradypp/godot-mcp](https://github.com/bradypp/godot-mcp))
+Both notices are in [LICENSE](LICENSE).
 
-We sincerely thank the original maintainers, contributors, and the broader Godot and open-source communities who laid the groundwork for these tools. Their specialized prototypes proved the viability of connecting Large Language Models to Godot via MCP and provided essential insights that made this unified, production-ready toolchain possible.
+## License
+
+MIT. Copyright (c) 2025-2026 Shanley Clarence Lacanlale. See [LICENSE](LICENSE).

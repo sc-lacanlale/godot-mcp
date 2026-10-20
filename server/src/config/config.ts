@@ -118,16 +118,13 @@ export function loadConfig(overrides?: Partial<ServerConfig>): ServerConfig {
   const CONFIG_FILENAME = 'godot-mcp.config.json';
 
   // Build list of candidate directories to search
-  const searchDirs: string[] = [
-    process.cwd(),
-  ];
+  const searchDirs: string[] = [process.cwd()];
 
   // Server root: resolve from this file's location (dist/config/ → dist/ → server/)
   try {
     const thisFile = new URL(import.meta.url).pathname;
-    const normalized = process.platform === 'win32'
-      ? thisFile.replace(/^\/([A-Za-z]:)/, '$1')
-      : thisFile;
+    const normalized =
+      process.platform === 'win32' ? thisFile.replace(/^\/([A-Za-z]:)/, '$1') : thisFile;
     // From dist/config/config.js → go up to dist/ → up to server/ → up to project root
     const serverRoot = resolve(normalized, '..', '..', '..');
     searchDirs.push(serverRoot);
@@ -163,17 +160,21 @@ export function loadConfig(overrides?: Partial<ServerConfig>): ServerConfig {
         if (fileConfig.godotPath) base.godotPath = normalize(fileConfig.godotPath);
         // godotProjectPath: explicit pin to your game project — highest priority, overrides IDE CWD.
         // Needed for IDEs (like Kiro) that set process.cwd() to their own install dir.
-        if (fileConfig.godotProjectPath) base.godotProjectPath = normalize(fileConfig.godotProjectPath);
+        if (fileConfig.godotProjectPath)
+          base.godotProjectPath = normalize(fileConfig.godotProjectPath);
         if (fileConfig.debugMode !== undefined) base.debugMode = fileConfig.debugMode;
-        if (fileConfig.godotDebugMode !== undefined) base.godotDebugMode = fileConfig.godotDebugMode;
-        if (fileConfig.strictPathValidation !== undefined) base.strictPathValidation = fileConfig.strictPathValidation;
+        if (fileConfig.godotDebugMode !== undefined)
+          base.godotDebugMode = fileConfig.godotDebugMode;
+        if (fileConfig.strictPathValidation !== undefined)
+          base.strictPathValidation = fileConfig.strictPathValidation;
         if (fileConfig.readOnlyMode !== undefined) base.readOnlyMode = fileConfig.readOnlyMode;
         if (fileConfig.websocketUrl) base.websocketUrl = fileConfig.websocketUrl;
         if (fileConfig.websocketPort) base.websocketPort = fileConfig.websocketPort;
         if (fileConfig.commandTimeout) base.commandTimeout = fileConfig.commandTimeout;
         if (fileConfig.gameBridgeUrl) base.gameBridgeUrl = fileConfig.gameBridgeUrl;
         if (fileConfig.gameBridgePort) base.gameBridgePort = fileConfig.gameBridgePort;
-        if (fileConfig.allowUnsafeGameCommands !== undefined) base.allowUnsafeGameCommands = fileConfig.allowUnsafeGameCommands;
+        if (fileConfig.allowUnsafeGameCommands !== undefined)
+          base.allowUnsafeGameCommands = fileConfig.allowUnsafeGameCommands;
         break; // Use first config found
       }
     } catch {

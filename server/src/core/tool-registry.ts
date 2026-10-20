@@ -19,34 +19,35 @@ import type { MCPTool } from '../utils/types.js';
 // ---------------------------------------------------------------------------
 
 export type ToolCategory =
-    | 'node'
-    | 'scene'
-    | 'script'
-    | 'editor'
-    | 'project'
-    | 'docs'
-    | 'vision'
-    | 'system'
-    | 'asset'
-    | 'search'
-    | 'workflow'
-    | 'validation'
-    | 'discovery'
-    | 'context'
-    | 'debug'
-    | 'signal'
-    | 'config'
-    | 'physics'
-    | 'animation'
-    | 'ui'
-    | 'inspect'
-    | 'visualizer'
-    | 'game_bridge';
+  | 'node'
+  | 'scene'
+  | 'script'
+  | 'editor'
+  | 'project'
+  | 'docs'
+  | 'vision'
+  | 'system'
+  | 'asset'
+  | 'search'
+  | 'workflow'
+  | 'validation'
+  | 'discovery'
+  | 'context'
+  | 'debug'
+  | 'signal'
+  | 'config'
+  | 'physics'
+  | 'animation'
+  | 'ui'
+  | 'audio'
+  | 'inspect'
+  | 'visualizer'
+  | 'game_bridge';
 
 export interface ToolRegistration {
-    tool: MCPTool;
-    readOnly: boolean;
-    category: ToolCategory;
+  tool: MCPTool;
+  readOnly: boolean;
+  category: ToolCategory;
 }
 
 // ---------------------------------------------------------------------------
@@ -54,90 +55,89 @@ export interface ToolRegistration {
 // ---------------------------------------------------------------------------
 
 export class ToolRegistry {
-    private registry = new Map<string, ToolRegistration>();
+  private registry = new Map<string, ToolRegistration>();
 
-    /**
-     * Register a single tool.
-     */
-    register(registration: ToolRegistration): void {
-        if (this.registry.has(registration.tool.name)) {
-            logDebug(`Overwriting existing tool: ${registration.tool.name}`);
-        }
-        this.registry.set(registration.tool.name, registration);
-        logDebug(`Registered tool: ${registration.tool.name} [${registration.category}] readOnly=${registration.readOnly}`);
+  /**
+   * Register a single tool.
+   */
+  register(registration: ToolRegistration): void {
+    if (this.registry.has(registration.tool.name)) {
+      logDebug(`Overwriting existing tool: ${registration.tool.name}`);
+    }
+    this.registry.set(registration.tool.name, registration);
+    logDebug(
+      `Registered tool: ${registration.tool.name} [${registration.category}] readOnly=${registration.readOnly}`,
+    );
+  }
+
+  /**
+   * Bulk-register an array of tools sharing the same category and readOnly flag.
+   */
+  registerBatch(tools: MCPTool[], options: { readOnly: boolean; category: ToolCategory }): void {
+    for (const tool of tools) {
+      this.register({
+        tool,
+        readOnly: options.readOnly,
+        category: options.category,
+      });
+    }
+  }
+
+  /**
+   * Get all tools that should be exposed to the MCP client.
+   * If READ_ONLY_MODE is enabled, only read-only tools are returned.
+   */
+  getFilteredTools(readOnlyMode: boolean = READ_ONLY_MODE): MCPTool[] {
+    const all = Array.from(this.registry.values());
+
+    if (!readOnlyMode) {
+      return all.map((r) => r.tool);
     }
 
-    /**
-     * Bulk-register an array of tools sharing the same category and readOnly flag.
-     */
-    registerBatch(
-        tools: MCPTool[],
-        options: { readOnly: boolean; category: ToolCategory },
-    ): void {
-        for (const tool of tools) {
-            this.register({
-                tool,
-                readOnly: options.readOnly,
-                category: options.category,
-            });
-        }
+    const filtered = all.filter((r) => r.readOnly);
+    logInfo(`[READ_ONLY_MODE] Filtered out ${all.length - filtered.length} write tools`);
+    return filtered.map((r) => r.tool);
+  }
+
+  /**
+   * Get all registered tool names.
+   */
+  getToolNames(): string[] {
+    return Array.from(this.registry.keys());
+  }
+
+  /**
+   * Get names grouped by category.
+   */
+  getToolsByCategory(): Record<string, string[]> {
+    const result: Record<string, string[]> = {};
+    for (const [name, reg] of this.registry) {
+      if (!result[reg.category]) result[reg.category] = [];
+      result[reg.category].push(name);
     }
+    return result;
+  }
 
-    /**
-     * Get all tools that should be exposed to the MCP client.
-     * If READ_ONLY_MODE is enabled, only read-only tools are returned.
-     */
-    getFilteredTools(): MCPTool[] {
-        const all = Array.from(this.registry.values());
+  /**
+   * Check whether a tool is registered.
+   */
+  has(name: string): boolean {
+    return this.registry.has(name);
+  }
 
-        if (!READ_ONLY_MODE) {
-            return all.map((r) => r.tool);
-        }
+  /**
+   * Get the registration for a tool by name.
+   */
+  get(name: string): ToolRegistration | undefined {
+    return this.registry.get(name);
+  }
 
-        const filtered = all.filter((r) => r.readOnly);
-        logInfo(`[READ_ONLY_MODE] Filtered out ${all.length - filtered.length} write tools`);
-        return filtered.map((r) => r.tool);
-    }
-
-    /**
-     * Get all registered tool names.
-     */
-    getToolNames(): string[] {
-        return Array.from(this.registry.keys());
-    }
-
-    /**
-     * Get names grouped by category.
-     */
-    getToolsByCategory(): Record<string, string[]> {
-        const result: Record<string, string[]> = {};
-        for (const [name, reg] of this.registry) {
-            if (!result[reg.category]) result[reg.category] = [];
-            result[reg.category].push(name);
-        }
-        return result;
-    }
-
-    /**
-     * Check whether a tool is registered.
-     */
-    has(name: string): boolean {
-        return this.registry.has(name);
-    }
-
-    /**
-     * Get the registration for a tool by name.
-     */
-    get(name: string): ToolRegistration | undefined {
-        return this.registry.get(name);
-    }
-
-    /**
-     * Total number of registered tools (before filtering).
-     */
-    get size(): number {
-        return this.registry.size;
-    }
+  /**
+   * Total number of registered tools (before filtering).
+   */
+  get size(): number {
+    return this.registry.size;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -147,8 +147,8 @@ export class ToolRegistry {
 let instance: ToolRegistry | null = null;
 
 export function getToolRegistry(): ToolRegistry {
-    if (!instance) {
-        instance = new ToolRegistry();
-    }
-    return instance;
+  if (!instance) {
+    instance = new ToolRegistry();
+  }
+  return instance;
 }

@@ -2,9 +2,7 @@
  * Main entry point for the Godot Project Map Visualizer
  */
 
-import {
-  nodes, edges, camera, NODE_W, NODE_H
-} from './state.js';
+import { nodes, edges, camera, NODE_W, NODE_H } from './state.js';
 import { connectWebSocket } from './websocket.js';
 import { initLayout } from './layout.js';
 import { initCanvas, resize, draw, updateZoomIndicator, fitToView } from './canvas.js';
