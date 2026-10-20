@@ -1,15 +1,10 @@
 {
-    "extends": "./tsconfig.json",
-    "compilerOptions": {
-        "types": [
-            "vitest/globals"
-        ]
-    },
-    "include": [
-        "src/**/*",
-        "src/__tests__/**/*.test.ts"
-    ],
-    "exclude": [
-        "node_modules"
-    ]
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "src",
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "src/visualizer/**"]
 }

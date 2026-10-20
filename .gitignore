@@ -60,9 +60,6 @@ coverage/
 .nyc_output/
 *test_index*.js
 TestScene.tscn
-test/
-tests/
-__tests__/
 
 # Documentation and Cache
 docs/
